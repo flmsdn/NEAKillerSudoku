@@ -12,6 +12,5 @@ def main():
         userInterface = UI.Terminal()
         userInterface.play()
 
-
 if __name__ == "__main__":
     main()

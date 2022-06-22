@@ -11,16 +11,22 @@ class UI():
         raise NotImplementedError
 
 class Terminal(UI):
-    def __init__(self):
-        pass
+    def __init__(self,file=None):
+        self.__file = file
 
     def play(self):
-        self.Game = Game()
+        self.Game = Game(self.__file)
         while True:
             self.display()
+            if self.Game.checkFull():
+                if self.Game.checkComplete():
+                    print("Well done! Game complete")
+                    break
+                else:
+                    print("Incorrect")
             row,col,val = int(input("Row to input: ")), int(input("Column to input: ")), int(input("Value: "))
             print("\n")
-            self.Game.updateCell(row+1,col+1,val)
+            self.Game.updateCell(row-1,col-1,val)
 
     def display(self):
         if self.Game.getType() == 0:
@@ -43,3 +49,6 @@ class Terminal(UI):
 class GUI(UI):
     def __init__(self):
         pass
+
+if __name__ == "__main__":
+    Terminal("TestCaseGame.json").play()

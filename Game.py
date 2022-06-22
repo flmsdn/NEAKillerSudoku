@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 class Game():
-    def __init__(self,file):
+    def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         if file:
             self.loadGame(file)
@@ -14,6 +14,7 @@ class Game():
         filePath = "\\LocalGames\\"+file
         loadFile = open(sys.path[0]+filePath,"r")
         gameObject = json.load(loadFile)
+        self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
 
     def getType(self):

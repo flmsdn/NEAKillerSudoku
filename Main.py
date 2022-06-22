@@ -7,10 +7,10 @@ def main():
             userInterface = UI.Terminal()
         elif sys.argv[1]=="g":
             userInterface = UI.GUI()
-        userInterface.play()
+        userInterface.run()
     else:
         userInterface = UI.Terminal()
-        userInterface.play()
+        userInterface.run()
 
 if __name__ == "__main__":
     main()

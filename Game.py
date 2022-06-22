@@ -5,6 +5,7 @@ import numpy as np
 class Game():
     def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
+        self.__startingCells = []
         if file:
             self.loadGame(file)
         else:
@@ -16,6 +17,10 @@ class Game():
         gameObject = json.load(loadFile)
         self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
+        for i in range(9):
+            for j in range(9):
+                if self.__grid[j][i] != 0:
+                    self.__startingCells.append( (i,j) )
 
     def getType(self):
         return self.__gameType
@@ -26,6 +31,9 @@ class Game():
     def updateCell(self,x,y, value):
         self.__grid[y][x] = value
     
+    def checkCell(self,x,y):
+        return not (x,y) in self.__startingCells
+
     def checkFull(self):
         return not 0 in np.array(self.__grid)
 
@@ -41,4 +49,4 @@ class Game():
 
 if __name__ == "__main__":
     g = Game()
-    if 0 in np.array(g.getGrid()): print(True)
+    print(g.checkCell(2,2))

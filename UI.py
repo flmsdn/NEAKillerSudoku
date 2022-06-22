@@ -1,5 +1,8 @@
 from Game import Game
 
+class GameFinish(Exception):
+    pass
+
 class UI():
     def __init__(self,file=None):
         self._file = file
@@ -22,14 +25,24 @@ class Terminal(UI):
     def __init__(self, file=None):
         super().__init__(file)
 
+    def run(self):
+        print(open("Instructions.txt").read(),"\n\nPress Enter to Play")
+        input()
+        super().run()
+
     def play(self):
         self.Game = Game(self._file)
+
         def validInp(text):
-            value = int(input(text))
-            if not 0<value<10:
+            value = input(text)
+            if value.lower() == "s":
+                self._gameOver = True
+                raise GameFinish
+            if not 0<int(value)<10:
                 raise ValueError
             else:
-                return value
+                return int(value)
+        
         while True:
             self.display()
             if self.Game.checkFull():
@@ -43,12 +56,18 @@ class Terminal(UI):
                 break
             while True:
                 try:
-                    row,col,val = validInp("Row to input: "), validInp("Column to input: "), validInp("Value: ")
-                    break
+                    x,y,val = validInp("Col to input (x coordinate): "), validInp("Row to input (y coordinate): "), validInp("Value: ")
+                    if self.Game.checkCell(x-1,y-1):
+                        break
+                    else:
+                        raise ValueError
+                except GameFinish:
+                    print("Game Stopped")
+                    return
                 except:
                     print("Please input a valid number (between 1 and 9 inclusive)\n")
             print("\n")
-            self.Game.updateCell(row-1,col-1,val)
+            self.Game.updateCell(x-1,y-1,val)
 
     def display(self):
         if self.Game.getType() == 0:

@@ -179,3 +179,4 @@ class GUI(UI):
 
 if __name__ == "__main__":
     Terminal("TestCaseGame.json").run()
+    print()

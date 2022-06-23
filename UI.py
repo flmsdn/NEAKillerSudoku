@@ -1,17 +1,53 @@
+from multiprocessing import Event
 from Game import Game
 
+#Events are going to be used with Exception Handling
 class GameFinish(Exception):
     pass
+
+class Undo(Exception):
+    pass
+
+class Redo(Exception):
+    pass
+
+class Action():
+    def __init__(self,x,y,before,after):
+        self.x,self.y,self.before,self.after=x,y,before,after
 
 class UI():
     def __init__(self,file=None):
         self._file = file
         self._gameOver = False
+        self._actionStack = []
+        self._redoStack = []
+        self.Game = Game()
 
     def run(self):
         while not self._gameOver:
             self.play()
+    
+    def playMove(self,x,y,val):
+        action = Action(x,y,self.Game.getCell(x-1,y-1),val)
+        self.Game.updateCell(x-1,y-1,val)
+        self._actionStack.append(action)
+        self._redoStack = []
 
+    def undo(self):
+        if not self._actionStack: return False
+        action = self._actionStack.pop()
+        self._redoStack.append(action)
+        print(action.x-1,action.y-1,action.before,action.after)
+        self.Game.updateCell(action.x-1,action.y-1,action.before)
+        return True
+    
+    def redo(self):
+        if not self._redoStack: return False
+        action = self._redoStack.pop()
+        self._actionStack.append(action)
+        self.Game.updateCell(action.x-1,action.y-1,action.after)
+        return True
+        
     def play(self):
         raise NotImplementedError
     
@@ -35,9 +71,9 @@ class Terminal(UI):
 
         def validInp(text):
             value = input(text)
-            if value.lower() == "s":
-                self._gameOver = True
-                raise GameFinish
+            gameEvents = {"s": GameFinish, "u": Undo, "r": Redo } #use a dictionary to avoid long if statements
+            if value.lower() in gameEvents:
+                raise gameEvents[value.lower()]
             if not 0<int(value)<10:
                 raise ValueError
             else:
@@ -62,12 +98,25 @@ class Terminal(UI):
                     else:
                         raise ValueError
                 except GameFinish:
+                    self._gameOver = True
                     print("Game Stopped")
                     return
+                except Undo:
+                    if self.undo():
+                        print("Action Undone")
+                        self.display()
+                    else:
+                        print("There were no moves to Undo")
+                except Redo:
+                    if self.redo():
+                        print("Action Redone")
+                        self.display()
+                    else:
+                        print("There were no moves to Redo")
                 except:
                     print("Please input a valid number (between 1 and 9 inclusive)\n")
             print("\n")
-            self.Game.updateCell(x-1,y-1,val)
+            self.playMove(x,y,val)
 
     def display(self):
         if self.Game.getType() == 0:

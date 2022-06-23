@@ -27,6 +27,9 @@ class Game():
 
     def getGrid(self):
         return self.__grid
+    
+    def getCell(self,x,y):
+        return self.__grid[y][x]
 
     def updateCell(self,x,y, value):
         self.__grid[y][x] = value

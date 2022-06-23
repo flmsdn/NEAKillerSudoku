@@ -1,17 +1,26 @@
 import os, sys
 import json
 import numpy as np
+from GridGeneration import Generator
 
 class Game():
     def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
         self.__fixedCells = []
-        if file:
-            self.loadGame(file)
-        else:
-            self.loadGame()
-    
+
+    def __getFixedCells(self):
+        for i in range(9):
+            for j in range(9):
+                if self.__grid[j][i] != 0:
+                    self.__fixedCells.append( [i,j] )
+
+    def newGame(self, difficulty):
+        self.__gameType = 0
+        self.__fixedCells = []
+        self.__grid = Generator().genGrid(difficulty)
+        self.__getFixedCells()
+
     def saveGame(self,file):
         if file==".json":
             return False
@@ -37,10 +46,7 @@ class Game():
             self.__fixedCells = gameObject["fixedCells"]
             print(self.__fixedCells)
         except:
-            for i in range(9):
-                for j in range(9):
-                    if self.__grid[j][i] != 0:
-                        self.__fixedCells.append( [i,j] )
+            self.__getFixedCells()
             self.saveGame(file)
             print(self.__fixedCells)
 

@@ -79,6 +79,7 @@ class UI():
     def gameOver(self):
         return self._gameOver
 
+
 class Terminal(UI):
     def __init__(self, file=None):
         super().__init__(file)
@@ -92,11 +93,16 @@ class Terminal(UI):
     def play(self):
         i = input("Would you like to load a game or play a new game? (1/2)")
         if i=="1":
-            #list files in directory
+            #load game
             self.load()
         elif i=="2":
             #generate new game
-            pass
+            try:
+                diff = int(input("Input a difficulty 1-7 (2 is default): "))
+                if not 0<diff<8: raise ValueError
+            except:
+                diff = 2
+            self.Game.newGame(diff)
 
         def validInp(text, val):
             value = input(text)

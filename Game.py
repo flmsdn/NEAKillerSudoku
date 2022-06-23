@@ -1,10 +1,11 @@
-import sys
+import os, sys
 import json
 import numpy as np
 
 class Game():
     def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
+        self.__gameFile = ""
         self.__startingCells = []
         if file:
             self.loadGame(file)
@@ -25,6 +26,7 @@ class Game():
     def loadGame(self,file="DefaultGame.json"):
         self.__startingCells = []
         if not file: file="DefaultGame.json"
+        self.__gameFile = file
         filePath = "\\LocalGames\\"+file
         loadFile = open(sys.path[0]+filePath,"r")
         gameObject = json.load(loadFile)
@@ -35,6 +37,16 @@ class Game():
             for j in range(9):
                 if self.__grid[j][i] != 0:
                     self.__startingCells.append( (i,j) )
+
+    def deleteGame(self,file=None):
+        if not file:
+            file = self.__gameFile
+        filePath = "\\LocalGames\\"+file
+        try:
+            os.remove(sys.path[0]+filePath)
+            return True
+        except:
+            return False
 
     def getType(self):
         return self.__gameType
@@ -66,4 +78,4 @@ class Game():
 
 if __name__ == "__main__":
     g = Game()
-    g.saveGame("savingTest.json")
+    g.deleteGame("Game1.json")

@@ -111,6 +111,9 @@ class Terminal(UI):
             if self.Game.checkFull():
                 if self.Game.checkComplete():
                     print("Well done! Game complete")
+                    prompt = input("Would you like to delete your game file? (y/n)")
+                    if prompt.lower() !=  "n":
+                        self.Game.deleteGame()
                 else:
                     print("Incorrect")
                 playAgain = input("\nPlay Again? (y/n): ").lower()
@@ -179,4 +182,3 @@ class GUI(UI):
 
 if __name__ == "__main__":
     Terminal("TestCaseGame.json").run()
-    print()

@@ -1,5 +1,6 @@
 import os, sys
 from Game import Game
+from Colours import Colour
 
 #Events are going to be used with Exception Handling
 class GameFinish(Exception):
@@ -59,6 +60,7 @@ class UI():
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
         self.Game.saveGame(fileName)
+        print("Saved\n")
 
     def load(self):
         games = os.listdir(sys.path[0]+"\\LocalGames")
@@ -82,6 +84,7 @@ class Terminal(UI):
         super().__init__(file)
 
     def run(self):
+        print(Colour.BLUE+Colour.BOLD+"Sudoku"+Colour.ENDC+"\n")
         print(open("Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
@@ -166,11 +169,14 @@ class Terminal(UI):
                 printedGrid+=str(row+1)+" "
                 for col in range(9):
                     if grid[row][col]!=0:
-                        printedGrid+=str(grid[row][col])
+                        if self.Game.checkCell(col,row):
+                            printedGrid+=str(grid[row][col])
+                        else:
+                            printedGrid+=Colour.BOLD+str(grid[row][col])+Colour.ENDC
                     else:
                         printedGrid+=" "
-                    if col in (2,5): printedGrid+="|"
-                if row in (2,5): printedGrid+="\n  "+"-"*11
+                    if col in (2,5): printedGrid+=Colour.BOLD+"|"+Colour.ENDC
+                if row in (2,5): printedGrid+="\n  "+Colour.BOLD+"-"*11+Colour.ENDC
                 printedGrid+="\n"
             print(printedGrid)
         else:

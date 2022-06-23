@@ -6,7 +6,7 @@ class Game():
     def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
-        self.__startingCells = []
+        self.__fixedCells = []
         if file:
             self.loadGame(file)
         else:
@@ -19,12 +19,12 @@ class Game():
         gameObject = {}
         gameObject["gameType"] = self.__gameType
         gameObject["board"] = self.__grid
+        gameObject["fixedCells"] = self.__fixedCells
         saveFile = open(sys.path[0]+filePath,"w")
         saveFile.write(json.dumps(gameObject,separators=(",",":")))
         saveFile.close()
 
     def loadGame(self,file="DefaultGame.json"):
-        self.__startingCells = []
         if not file: file="DefaultGame.json"
         self.__gameFile = file
         filePath = "\\LocalGames\\"+file
@@ -33,10 +33,16 @@ class Game():
         loadFile.close()
         self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
-        for i in range(9):
-            for j in range(9):
-                if self.__grid[j][i] != 0:
-                    self.__startingCells.append( (i,j) )
+        try:
+            self.__fixedCells = gameObject["fixedCells"]
+            print(self.__fixedCells)
+        except:
+            for i in range(9):
+                for j in range(9):
+                    if self.__grid[j][i] != 0:
+                        self.__fixedCells.append( [i,j] )
+            self.saveGame(file)
+            print(self.__fixedCells)
 
     def deleteGame(self,file=None):
         if not file:
@@ -61,7 +67,7 @@ class Game():
         self.__grid[y][x] = value
     
     def checkCell(self,x,y):
-        return not (x,y) in self.__startingCells
+        return not [x,y] in self.__fixedCells
 
     def checkFull(self):
         return not 0 in np.array(self.__grid)

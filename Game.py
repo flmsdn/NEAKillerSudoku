@@ -11,10 +11,24 @@ class Game():
         else:
             self.loadGame()
     
+    def saveGame(self,file):
+        if file==".json":
+            return False
+        filePath = "\\LocalGames\\"+file
+        gameObject = {}
+        gameObject["gameType"] = self.__gameType
+        gameObject["board"] = self.__grid
+        saveFile = open(sys.path[0]+filePath,"w")
+        saveFile.write(json.dumps(gameObject,separators=(",",":")))
+        saveFile.close()
+
     def loadGame(self,file="DefaultGame.json"):
+        self.__startingCells = []
+        if not file: file="DefaultGame.json"
         filePath = "\\LocalGames\\"+file
         loadFile = open(sys.path[0]+filePath,"r")
         gameObject = json.load(loadFile)
+        loadFile.close()
         self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
         for i in range(9):
@@ -52,4 +66,4 @@ class Game():
 
 if __name__ == "__main__":
     g = Game()
-    print(g.checkCell(2,2))
+    g.saveGame("savingTest.json")

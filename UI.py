@@ -1,4 +1,4 @@
-from multiprocessing import Event
+import os, sys
 from Game import Game
 
 #Events are going to be used with Exception Handling
@@ -11,13 +11,18 @@ class Undo(Exception):
 class Redo(Exception):
     pass
 
+class Save(Exception):
+    pass
+
+class Load(Exception):
+    pass
+
 class Action():
     def __init__(self,x,y,before,after):
         self.x,self.y,self.before,self.after=x,y,before,after
 
 class UI():
-    def __init__(self,file=None):
-        self._file = file
+    def __init__(self,loadOption=0):
         self._gameOver = False
         self._actionStack = []
         self._redoStack = []
@@ -47,7 +52,22 @@ class UI():
         self._actionStack.append(action)
         self.Game.updateCell(action.x-1,action.y-1,action.after)
         return True
-        
+    
+    def save(self):
+        fileName = input("Enter a name to save the file as (leave blank to not save):")
+        if not fileName: return
+        if len(fileName)>4 and fileName[-5:]!=".json":
+            fileName+=".json"
+        self.Game.saveGame(fileName)
+
+    def load(self):
+        games = os.listdir(sys.path[0]+"\\LocalGames")
+        print("   ".join(games))
+        fileName = input("Choose a file to load: ")
+        if len(fileName)>4 and fileName[-5:]!=".json":
+            fileName+=".json"
+        self.Game.loadGame(fileName)
+
     def play(self):
         raise NotImplementedError
     
@@ -67,14 +87,21 @@ class Terminal(UI):
         super().run()
 
     def play(self):
-        self.Game = Game(self._file)
+        i = input("Would you like to load a game or play a new game? (1/2)")
+        if i=="1":
+            #list files in directory
+            self.load()
+        elif i=="2":
+            #generate new game
+            pass
 
-        def validInp(text):
+        def validInp(text, val):
             value = input(text)
-            gameEvents = {"s": GameFinish, "u": Undo, "r": Redo } #use a dictionary to avoid long if statements
+            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save } #use a dictionary to avoid long if statements
             if value.lower() in gameEvents:
                 raise gameEvents[value.lower()]
-            if not 0<int(value)<10:
+            minValue = -1 if val else 0
+            if not minValue<int(value)<10:
                 raise ValueError
             else:
                 return int(value)
@@ -92,14 +119,17 @@ class Terminal(UI):
                 break
             while True:
                 try:
-                    x,y,val = validInp("Col to input (x coordinate): "), validInp("Row to input (y coordinate): "), validInp("Value: ")
+                    x,y,val = validInp("Col to input (x coordinate): ",False), validInp("Row to input (y coordinate): ",False), validInp("Value: ",True)
                     if self.Game.checkCell(x-1,y-1):
                         break
                     else:
                         raise ValueError
                 except GameFinish:
+                    prompt = input("Do you want to save your game first? (y/n)")
+                    if prompt.lower()=="y":
+                        self.save()
                     self._gameOver = True
-                    print("Game Stopped")
+                    print("Game Terminated")
                     return
                 except Undo:
                     if self.undo():
@@ -113,6 +143,13 @@ class Terminal(UI):
                         self.display()
                     else:
                         print("There were no moves to Redo")
+                except Save:
+                    self.save()
+                except Load:
+                    prompt = input("Do you want to save your game first? (y/n)")
+                    if prompt.lower()=="y":
+                        self.save()
+                    self.load()
                 except:
                     print("Please input a valid number (between 1 and 9 inclusive)\n")
             print("\n")

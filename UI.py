@@ -18,6 +18,9 @@ class Save(Exception):
 class Load(Exception):
     pass
 
+class Solve(Exception):
+    pass
+
 class Action():
     def __init__(self,x,y,before,after):
         self.x,self.y,self.before,self.after=x,y,before,after
@@ -79,7 +82,7 @@ class UI():
     def gameOver(self):
         return self._gameOver
 
-
+# Terminal UI
 class Terminal(UI):
     def __init__(self, file=None):
         super().__init__(file)
@@ -89,6 +92,19 @@ class Terminal(UI):
         print(open("Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
+
+    def gridComplete(self):
+        if self.Game.checkComplete():
+            print("Well done! Game complete")
+            if self.Game.getFile:
+                prompt = input("Would you like to delete your game file? (y/n)")
+                if prompt.lower() !=  "n":
+                    self.Game.deleteGame()
+        else:
+            print("Incorrect")
+        playAgain = input("\nPlay Again? (y/n): ").lower()
+        if playAgain=="n":
+            self._gameOver = True
 
     def play(self):
         i = input("Would you like to load a game or play a new game? (1/2)")
@@ -106,7 +122,7 @@ class Terminal(UI):
 
         def validInp(text, val):
             value = input(text)
-            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save } #use a dictionary to avoid long if statements
+            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save, "f": Solve } #use a dictionary to avoid long if statements
             if value.lower() in gameEvents:
                 raise gameEvents[value.lower()]
             minValue = -1 if val else 0
@@ -118,16 +134,7 @@ class Terminal(UI):
         while True:
             self.display()
             if self.Game.checkFull():
-                if self.Game.checkComplete():
-                    print("Well done! Game complete")
-                    prompt = input("Would you like to delete your game file? (y/n)")
-                    if prompt.lower() !=  "n":
-                        self.Game.deleteGame()
-                else:
-                    print("Incorrect")
-                playAgain = input("\nPlay Again? (y/n): ").lower()
-                if playAgain=="n":
-                    self._gameOver = True
+                self.gridComplete()
                 break
             while True:
                 try:
@@ -162,6 +169,13 @@ class Terminal(UI):
                     if prompt.lower()=="y":
                         self.save()
                     self.load()
+                except Solve:
+                    prompt = input("Are you sure you want to solve the grid? (y/n)")
+                    if prompt.lower()=="y":
+                        self.Game.solve()
+                        self.display()
+                        self.gridComplete()
+                        return
                 except:
                     print("Please input a valid number (between 1 and 9 inclusive)\n")
             print("\n")

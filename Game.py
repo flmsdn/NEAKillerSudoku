@@ -8,17 +8,25 @@ class Game():
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
         self.__fixedCells = []
+        self.__gen = Generator()
 
+    def getFile(self):
+        return self.__gameFile
+    
     def __getFixedCells(self):
         for i in range(9):
             for j in range(9):
                 if self.__grid[j][i] != 0:
                     self.__fixedCells.append( [i,j] )
 
+    def solve(self):
+        self.__grid = self.__gen.solveGrid(self.__grid)
+
     def newGame(self, difficulty):
+        self.__gameFile = ""
         self.__gameType = 0
         self.__fixedCells = []
-        self.__grid = Generator().genGrid(difficulty)
+        self.__grid = self.__gen.genGrid(difficulty)
         self.__getFixedCells()
 
     def saveGame(self,file):
@@ -78,15 +86,10 @@ class Game():
     def checkFull(self):
         return not 0 in np.array(self.__grid)
 
-    def checkComplete(self):
-        npBoard = np.array(self.__grid) #get a numpy 2D array of the grid
-        gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
-        gridCols = [npBoard[:,j] for j in range(9)] #get all of the grid columns
-        gridNonets = [npBoard[i:i+3,j:j+3].flatten() for i in [0,3,6] for j in [0,3,6]] #get all of the nonets in the grid
-        for line in np.vstack( [gridRows, gridCols, gridNonets] ): #put all of these groups together and iterate over them
-            if len(np.unique(line))<9:
-                return False
-        return True
+    def checkComplete(self, grid=None):
+        if grid is None:
+            grid = self.__grid
+        return self.__gen.checkComplete(grid)
 
 if __name__ == "__main__":
     g = Game()

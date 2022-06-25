@@ -75,9 +75,12 @@ class Generator():
         if difficulty>7: difficulty=7
         elif difficulty<1: difficulty=1
         while difficulty:
+            '''
             while True:
                 r,c = random.choice(range(9)),random.choice(range(9))
-                if grid[r,c]: break
+                if grid[r,c]: break'''
+            zeros = list(zip(*np.where(grid>0)))
+            r,c = random.choice(zeros)
             oldVal = grid[r,c]
             grid[r,c]=0
             #copy grid so no permanent change are made

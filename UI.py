@@ -1,6 +1,8 @@
 import os, sys
+import tkinter as tk
 from Game import Game
 from Colours import Colour
+from GUIGame import GUIGame
 
 #Events are going to be used with Exception Handling
 class GameFinish(Exception):
@@ -57,18 +59,13 @@ class UI():
         self.Game.updateCell(action.x-1,action.y-1,action.after)
         return True
     
-    def save(self):
-        fileName = input("Enter a name to save the file as (leave blank to not save):")
+    def save(self,fileName):
         if not fileName: return
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
         self.Game.saveGame(fileName)
-        print("Saved\n")
 
-    def load(self):
-        games = os.listdir(sys.path[0]+"\\LocalGames")
-        print("   ".join(games))
-        fileName = input("Choose a file to load: ")
+    def load(self, fileName):
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
         self.Game.loadGame(fileName)
@@ -92,6 +89,19 @@ class Terminal(UI):
         print(open("Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
+
+    def save(self, fileName=None):
+        if fileName is None:
+            fileName = input("Enter a name to save the file as (leave blank to not save):")
+        super().play(fileName)
+        print("Saved\n")
+
+    def load(self,fileName=None):
+        if fileName is None:
+            games = os.listdir(sys.path[0]+"\\LocalGames")
+            print("   ".join(games))
+            fileName = input("Choose a file to load: ")
+        super().load(fileName)
 
     def gridComplete(self):
         if self.Game.checkComplete():
@@ -205,6 +215,39 @@ class Terminal(UI):
 class GUI(UI):
     def __init__(self, file=None):
         super().__init__(file)
+        self.__root = None
+        self.__GUIGame = None
+    
+    def startMenu(self):
+        pass
+
+    def gameScreen(self):
+        self.__GUIGame = GUIGame()
+        self.__GUIGame.openWindow()
+
+    def closeMenu(self):
+        pass
+
+    def closeGame(self):
+        pass
+
+    def run(self):
+        self.__root = tk.Tk()
+        self.__root.title("Main Menu")
+        self.__root.state("zoomed")
+        window = tk.Frame(self.__root,padx=10,pady=10)
+        window.grid()
+        playButton = tk.Button(window,text="Play", command=self.play).grid(column=1,row=1)
+        quitButton = tk.Button(window,text="Quit", command=self.gameOver).grid(column=1,row=2)
+        self.__root.mainloop()
+
+    def play(self):
+        self.gameScreen()
+
+    def gameOver(self):
+        self.gameOver = True
+        self.__root.destroy()
+        self.__root = None
 
 if __name__ == "__main__":
-    Terminal("TestCaseGame.json").run()
+    GUI("TestCaseGame.json").run()

@@ -233,12 +233,18 @@ class GUI(UI):
         self.__root = None
         self.__GUIGame = None
     
-    def startMenu(self):
-        pass
+    def __startMenu(self):
+        self.__root = tk.Tk()
+        self.__root.title("Main Menu")
+        self.__root.state("zoomed")
+        window = tk.Frame(self.__root,padx=10,pady=10)
+        window.grid()
+        playButton = tk.Button(window,text="Play", command=self.play).grid(column=1,row=1)
+        quitButton = tk.Button(window,text="Quit", command=self.gameOver).grid(column=1,row=2)
 
-    def gameScreen(self):
+    def __gameScreen(self):
         self.__GUIGame = GUIGame()
-        self.__GUIGame.openWindow()
+        self.__GUIGame.openWindow(self.saveButton,self.load,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
         self.display()
         self.eventSetup()
         self.__GUIGame.startGame()
@@ -247,23 +253,41 @@ class GUI(UI):
         pass
 
     def closeGame(self):
-        pass
+        #TODO add prompt for saving
+        self.__GUIGame.closeGame()
     
     def undo(self,event):
+        self.undoButton()
+
+    def redo(self,event):
+        self.redoButton()
+    
+    def solve(self,event):
+        self.solveButton()
+
+    def save(self, event):
+        self.saveButton()
+    
+    def load(self,event):
+        self.loadButton()
+    
+    def undoButton(self):
         if super().undo():
             self.display()
 
-    def redo(self,event):
+    def redoButton(self):
         if super().redo():
             self.display()
-    
-    def solve(self,event):
-        self.Game.solve()
-        print("solved")
-        self.display()
 
-    def save(self, event):
-        pass
+    def solveButton(self):
+        self.Game.solve()
+        self.display()
+        
+    def loadButton(self):
+        print("LOADING")
+
+    def saveButton(self):
+        print("saving")
 
     def eventSetup(self):
         self.__GUIGame.gameGrid.bind("<Button 1>",self.__GUIGame.cellClick)
@@ -282,18 +306,12 @@ class GUI(UI):
                 self.display()
 
     def run(self):
-        self.__root = tk.Tk()
-        self.__root.title("Main Menu")
-        self.__root.state("zoomed")
-        window = tk.Frame(self.__root,padx=10,pady=10)
-        window.grid()
-        playButton = tk.Button(window,text="Play", command=self.play).grid(column=1,row=1)
-        quitButton = tk.Button(window,text="Quit", command=self.gameOver).grid(column=1,row=2)
+        self.__startMenu()
         self.__root.mainloop()
 
     def play(self):
         super().load("DefaultGame.json")
-        self.gameScreen()
+        self.__gameScreen()
 
     def display(self):
         self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells())

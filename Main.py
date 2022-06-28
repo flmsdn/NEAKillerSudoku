@@ -18,7 +18,7 @@ def main():
         userInterface.run()
     else:
         #by default open a GUI game
-        userInterface = UI.Terminal()
+        userInterface = UI.GUI()
         userInterface.run()
 
 if __name__ == "__main__":

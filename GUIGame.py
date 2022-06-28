@@ -1,6 +1,7 @@
 from itertools import product
 import tkinter as tk
 import numpy as np
+import sys
 
 # handles the Tkinter for the GUI
 class GUIGame():
@@ -19,6 +20,7 @@ class GUIGame():
         self.__selectedCell = None
     
     # operations on colours
+    #https://stackoverflow.com/questions/3380726/converting-an-rgb-color-tuple-to-a-hexidecimal-string
     def __rgbToHex(self,rgb):
         return '#%02x%02x%02x' % rgb
     
@@ -32,19 +34,58 @@ class GUIGame():
         return tuple([a[x]-b[x] for x in range(len(a))])
 
     #open a new game in its own window
-    def openWindow(self):
+    def openWindow(self,saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction):
         self.gameWindow = tk.Tk()
         self.gameWindow.configure(bg=self.__rgbToHex(self.__colours["background"]))
         self.gameWindow.title("Game")
         self.gameWindow.state("zoomed")
         self.__dim = [self.gameWindow.winfo_screenwidth(),self.gameWindow.winfo_screenheight()]
-        self.__width = self.__dim[1]*0.7
+        #sudoku grid
+        self.__width = round(self.__dim[1]*0.7)
         self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0)
-        self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=self.__dim[1]/2-self.__width/2)
+        self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
+        #undo and redo images
+        self.__undoImg = tk.PhotoImage(master=self.gameWindow,file="./Resources/Undo.png")
+        self.__redoImg = tk.PhotoImage(master=self.gameWindow,file="./Resources/Redo.png")
+        #buttons
+        buttonWidthReg = round(self.__dim[1]*0.25)
+        buttonWidthSmall = round(self.__dim[1]*0.12)
+        buttonHeight = round(self.__dim[1]*0.04)
+        offsetHoriz = round(self.__dim[1]*0.025)
+        offsetVert = round(self.__dim[1]*0.015)
+        #button frames
+        saveButtonFrame = tk.Frame(self.gameWindow)
+        saveButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthReg-offsetHoriz,y=self.__dim[1]/2+self.__width/2-3*offsetVert,width=buttonWidthReg,height=buttonHeight)
+        loadButtonFrame = tk.Frame(self.gameWindow)
+        loadButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthReg-offsetHoriz,y=self.__dim[1]/2+self.__width/2,width=buttonWidthReg,height=buttonHeight)
+        solveButtonFrame = tk.Frame(self.gameWindow)
+        solveButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthReg-offsetHoriz,y=self.__dim[1]/2+self.__width/2+3*offsetVert,width=buttonWidthSmall,height=buttonHeight)
+        quitButtonFrame = tk.Frame(self.gameWindow)
+        quitButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthSmall-offsetHoriz,y=self.__dim[1]/2+self.__width/2+3*offsetVert,width=buttonWidthSmall,height=buttonHeight)
+        undoButtonFrame = tk.Frame(self.gameWindow)
+        undoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthSmall,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,width=buttonWidthSmall,height=buttonHeight)
+        redoButtonFrame = tk.Frame(self.gameWindow)
+        redoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthReg,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,width=buttonWidthSmall,height=buttonHeight)
+        #buttons
+        self.saveButton = tk.Button(saveButtonFrame,text="Save",command=saveFunction)
+        self.loadButton = tk.Button(loadButtonFrame,text="Load",command=loadFunction)
+        self.solveButton = tk.Button(solveButtonFrame,text="Solve",command=solveFunction)
+        self.quitButton = tk.Button(quitButtonFrame,text="Quit", command=quitFunction)
+        self.undoButton = tk.Button(undoButtonFrame,text="Undo", command=undoFunction)
+        self.redoButton = tk.Button(redoButtonFrame,text="Redo", command=redoFunction)
+        self.saveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.loadButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.solveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.quitButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.undoButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.redoButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
 
     #start the game window playing
     def startGame(self):
         self.gameWindow.mainloop()
+    
+    def closeGame(self):
+        self.gameWindow.destroy()
     
     #return the selected cell
     def getSelected(self):

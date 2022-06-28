@@ -23,10 +23,12 @@ class Load(Exception):
 class Solve(Exception):
     pass
 
+# Action class to contain actions for the undo and redo stacks
 class Action():
     def __init__(self,x,y,before,after):
         self.x,self.y,self.before,self.after=x,y,before,after
 
+# User Interface class that the Terminal and GUI will inherit from
 class UI():
     def __init__(self,loadOption=0):
         self._gameOver = False
@@ -34,24 +36,27 @@ class UI():
         self._redoStack = []
         self.Game = Game()
 
+    #loop the game playing
     def run(self):
         while not self._gameOver:
             self.play()
     
+    #control a move being played
     def playMove(self,x,y,val):
         action = Action(x,y,self.Game.getCell(x-1,y-1),val)
         self.Game.updateCell(x-1,y-1,val)
         self._actionStack.append(action)
         self._redoStack = []
 
+    #undo move
     def undo(self):
         if not self._actionStack: return False
         action = self._actionStack.pop()
         self._redoStack.append(action)
-        print(action.x-1,action.y-1,action.before,action.after)
         self.Game.updateCell(action.x-1,action.y-1,action.before)
         return True
-    
+
+    #redo move
     def redo(self):
         if not self._redoStack: return False
         action = self._redoStack.pop()
@@ -59,23 +64,32 @@ class UI():
         self.Game.updateCell(action.x-1,action.y-1,action.after)
         return True
     
+    #save the current game to a game file
     def save(self,fileName):
         if not fileName: return
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
+        elif len(fileName)<5:
+            fileName+=".json"
         self.Game.saveGame(fileName)
 
+    #load a game from a game file
     def load(self, fileName):
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
+        elif len(fileName)<5:
+            fileName+=".json"
         self.Game.loadGame(fileName)
 
+    #play the game - the main game loop
     def play(self):
         raise NotImplementedError
     
+    #display the current interface
     def display(self):
         raise NotImplementedError
 
+    #end the program
     def gameOver(self):
         return self._gameOver
 
@@ -93,7 +107,7 @@ class Terminal(UI):
     def save(self, fileName=None):
         if fileName is None:
             fileName = input("Enter a name to save the file as (leave blank to not save):")
-        super().play(fileName)
+        super().save(fileName)
         print("Saved\n")
 
     def load(self,fileName=None):
@@ -212,6 +226,7 @@ class Terminal(UI):
         else:
             pass
 
+# Graphical User Interface
 class GUI(UI):
     def __init__(self, file=None):
         super().__init__(file)
@@ -224,12 +239,47 @@ class GUI(UI):
     def gameScreen(self):
         self.__GUIGame = GUIGame()
         self.__GUIGame.openWindow()
+        self.display()
+        self.eventSetup()
+        self.__GUIGame.startGame()
 
     def closeMenu(self):
         pass
 
     def closeGame(self):
         pass
+    
+    def undo(self,event):
+        if super().undo():
+            self.display()
+
+    def redo(self,event):
+        if super().redo():
+            self.display()
+    
+    def solve(self,event):
+        self.Game.solve()
+        print("solved")
+        self.display()
+
+    def save(self, event):
+        pass
+
+    def eventSetup(self):
+        self.__GUIGame.gameGrid.bind("<Button 1>",self.__GUIGame.cellClick)
+        for number in range(1,10):
+            self.__GUIGame.gameWindow.bind(str(number),self.__numInput)
+        gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve } #use a dictionary to avoid long if statements
+        for x in gameEvents:
+            self.__GUIGame.gameWindow.bind(x,gameEvents[x])
+
+    def __numInput(self,event):
+        if 48<event.keycode<58:
+            value = event.keycode-48
+            cell = self.__GUIGame.getSelected()
+            if self.Game.checkCell(cell[0],cell[1]):
+                self.playMove(cell[0]+1,cell[1]+1,value)
+                self.display()
 
     def run(self):
         self.__root = tk.Tk()
@@ -242,8 +292,12 @@ class GUI(UI):
         self.__root.mainloop()
 
     def play(self):
+        super().load("DefaultGame.json")
         self.gameScreen()
 
+    def display(self):
+        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells())
+    
     def gameOver(self):
         self.gameOver = True
         self.__root.destroy()

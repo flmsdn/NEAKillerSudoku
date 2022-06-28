@@ -2,6 +2,7 @@ import itertools
 import random
 import numpy as np
 
+# Generator class for making and solving Sudoku grids
 class Generator():
     def __init__(self):
         self.__nums = list(range(1,10))
@@ -66,7 +67,7 @@ class Generator():
             gridTrial = np.copy(grid)
             self.fillGrid(gridTrial)
             if self.checkComplete(gridTrial):
-                return gridTrial
+                return gridTrial.tolist()
     
     def genGrid(self, difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
@@ -87,7 +88,7 @@ class Generator():
             if self.__count!=1:
                 grid[r,c]=oldVal
                 difficulty-=1
-        return grid
+        return grid.tolist()
 
 if __name__ == "__main__":
     g = Generator()

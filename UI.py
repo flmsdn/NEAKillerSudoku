@@ -287,7 +287,8 @@ class GUI(UI):
         print("LOADING")
 
     def saveButton(self):
-        print("saving")
+        fileName = self.__GUIGame.savePrompt()
+        super().save(fileName)
 
     def eventSetup(self):
         self.__GUIGame.gameGrid.bind("<Button 1>",self.__GUIGame.cellClick)

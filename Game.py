@@ -52,7 +52,10 @@ class Game():
         filePath = "\\LocalGames\\"+file
         gameObject = {}
         gameObject["gameType"] = self.__gameType
-        gameObject["board"] = self.__grid.tolist()
+        if type(self.__grid)!=list:
+            gameObject["board"] = self.__grid.tolist()
+        else:
+            gameObject["board"] = self.__grid
         gameObject["fixedCells"] = self.__fixedCells
         saveFile = open(sys.path[0]+filePath,"w")
         saveFile.write(json.dumps(gameObject,separators=(",",":")))

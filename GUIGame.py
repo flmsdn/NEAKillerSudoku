@@ -1,7 +1,8 @@
 from itertools import product
 import tkinter as tk
 import numpy as np
-import sys
+import tkinter.filedialog as fd
+import tkinter.simpledialog as sd
 
 # handles the Tkinter for the GUI
 class GUIGame():
@@ -95,12 +96,16 @@ class GUIGame():
     def cellClick(self,event):
         x,y = event.x, event.y
         cellWidth = self.__width/9
-        gridCell = [int(y//cellWidth),int(x//cellWidth)]
+        gridCell = [int(x//cellWidth),int(y//cellWidth)]
         if gridCell[0]>8:
             gridCell[0]=8
         if gridCell[1]>8:
             gridCell[1]=8
         self.__selectedCell = gridCell
+
+    def savePrompt(self):
+        st = sd.askstring("Prompt","Enter a name to save as: ")
+        return st
 
     #draws the current grid onto the canvas
     def updateGrid(self, grid, fixedCells):
@@ -130,4 +135,4 @@ class GUIGame():
         cellWidth, centreOffset = self.__width/9, self.__width/18
         for r,c in product(range(9),range(9)):
             if npGrid[r,c]:
-                self.gameGrid.create_text(centreOffset+r*cellWidth,centreOffset+c*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal))
+                self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal))

@@ -106,6 +106,10 @@ class GUIGame():
     def savePrompt(self):
         st = sd.askstring("Prompt","Enter a name to save as: ")
         return st
+    
+    def loadPrompt(self):
+        st = sd.askstring("Prompt","Enter a name to load from: ")
+        return st
 
     #draws the current grid onto the canvas
     def updateGrid(self, grid, fixedCells):

@@ -244,7 +244,7 @@ class GUI(UI):
 
     def __gameScreen(self):
         self.__GUIGame = GUIGame()
-        self.__GUIGame.openWindow(self.saveButton,self.load,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
+        self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
         self.display()
         self.eventSetup()
         self.__GUIGame.startGame()
@@ -285,6 +285,9 @@ class GUI(UI):
         
     def loadButton(self):
         print("LOADING")
+        fileName = self.__GUIGame.loadPrompt()
+        super().load(fileName)
+        self.display()
 
     def saveButton(self):
         fileName = self.__GUIGame.savePrompt()

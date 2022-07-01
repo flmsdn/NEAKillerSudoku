@@ -231,22 +231,47 @@ class GUI(UI):
     def __init__(self, file=None):
         super().__init__(file)
         self.__root = None
-        self.__GUIGame = None
+        self.__GUIGame = GUIGame()
     
     def __startMenu(self):
         self.__root = tk.Tk()
         self.__root.title("Main Menu")
         self.__root.state("zoomed")
-        window = tk.Frame(self.__root,padx=10,pady=10)
-        window.grid()
-        playButton = tk.Button(window,text="Play", command=self.play).grid(column=1,row=1)
-        quitButton = tk.Button(window,text="Quit", command=self.gameOver).grid(column=1,row=2)
+        self.__dim = [self.__root.winfo_screenwidth(),self.__root.winfo_screenheight()]
+        buttonWidth = round(self.__dim[0]*0.1)
+        buttonHeight = round(self.__dim[0]*0.02)
+        offsetHoriz = round(self.__dim[0]*0.01)
+        offsetVert = round(self.__dim[0]*0.2)
+        #play
+        playFrame = tk.Frame(self.__root)
+        playFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=offsetVert,width=buttonWidth,height=buttonHeight)
+        playButton = tk.Button(playFrame,text="Play", command=self.playRandom)
+        playButton.pack(expand=True,fill=tk.BOTH)
+        #load
+        loadFrame = tk.Frame(self.__root)
+        loadFrame.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert,width=buttonWidth,height=buttonHeight)
+        loadButton = tk.Button(loadFrame,text="Load", command=self.playLoad)
+        loadButton.pack(expand=True,fill=tk.BOTH)
+        #quit
+        imgPath1 = sys.path[0]+"\\png.png"
+        imgPath = r"C:\Users\lumsd\Documents\Python\NEAKillerSudoku\png.png"
+        l = tk.Label(self.__root,image=imgPath).pack()
+        quitFrame = tk.Frame(self.__root)
+        quitFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.92)-buttonHeight,width=buttonWidth,height=buttonHeight)
+        quitButton = tk.Button(quitFrame,text="Quit", image=self.imageBut, command=self.gameOver)
+        quitButton.pack(expand=True,fill=tk.BOTH)
+        #difficulty slider
+        sliderFrame = tk.Frame(self.__root)
+        sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*2)
+        text = tk.Label(sliderFrame, text="Difficulty: ")
+        text.pack()
+        self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL)
+        self.__difficultySlider.pack(expand=True,fill=tk.X)
 
     def __gameScreen(self):
-        self.__GUIGame = GUIGame()
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
-        self.display()
         self.eventSetup()
+        self.display()
         self.__GUIGame.startGame()
 
     def closeMenu(self):
@@ -271,7 +296,16 @@ class GUI(UI):
     def load(self,event):
         self.loadButton()
     
+    def playRandom(self):
+        self.Game.newGame(self.__difficultySlider.get())
+        self.__gameScreen()
+    
+    def playLoad(self):
+        self.loadButton(play=True)
+        self.__gameScreen()
+
     def undoButton(self):
+        if self.__GUIGame.gameComplete(): return
         if super().undo():
             self.display()
 
@@ -281,13 +315,16 @@ class GUI(UI):
 
     def solveButton(self):
         self.Game.solve()
+        self.__GUIGame.endGame()
         self.display()
         
-    def loadButton(self):
-        print("LOADING")
+    def loadButton(self, play=False):
         fileName = self.__GUIGame.loadPrompt()
-        super().load(fileName)
-        self.display()
+        if fileName:
+            super().load(fileName)
+            if not play:
+                self.__GUIGame.resetGame()
+                self.display()
 
     def saveButton(self):
         fileName = self.__GUIGame.savePrompt()
@@ -302,20 +339,20 @@ class GUI(UI):
             self.__GUIGame.gameWindow.bind(x,gameEvents[x])
 
     def __numInput(self,event):
+        if self.__GUIGame.gameComplete(): return
         if 48<event.keycode<58:
             value = event.keycode-48
             cell = self.__GUIGame.getSelected()
             if self.Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,value)
+                if self.Game.checkFull():
+                    if self.Game.checkComplete():
+                        self.__GUIGame.endGame()
                 self.display()
 
     def run(self):
         self.__startMenu()
         self.__root.mainloop()
-
-    def play(self):
-        super().load("DefaultGame.json")
-        self.__gameScreen()
 
     def display(self):
         self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells())

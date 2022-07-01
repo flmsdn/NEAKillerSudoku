@@ -6,6 +6,7 @@ from GridGeneration import Generator
 
 # handles the board and interactions with the board
 class Game():
+    EMPTY = 0
     def __init__(self,file=None):
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
@@ -21,7 +22,7 @@ class Game():
     def __getFixedCells(self):
         for i in range(9):
             for j in range(9):
-                if self.__grid[j][i] != 0:
+                if self.__grid[j][i] != self.EMPTY:
                     self.__fixedCells.append( [i,j] )
 
     #returns the current list of fixed cell coordinates
@@ -102,7 +103,7 @@ class Game():
         return not [x,y] in self.__fixedCells
 
     def checkFull(self):
-        return not 0 in np.array(self.__grid)
+        return not  self.EMPTY in np.array(self.__grid)
 
     def checkComplete(self, grid=None):
         if grid is None:

@@ -3,8 +3,8 @@ import tkinter as tk
 import numpy as np
 import tkinter.filedialog as fd
 import tkinter.simpledialog as sd
-import re
-import sys
+import re, sys
+from PIL import Image, ImageTk
 
 # handles the Tkinter for the GUI
 class GUIGame():
@@ -64,11 +64,15 @@ class GUIGame():
         self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0)
         self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
         #undo and redo images
+        imLen = round(self.__dim[1]*0.05)
+        imOffset = round(self.__dim[1]*0.12)
         imgPath = sys.path[0]+r"\Resources"
-        self.__undoImg = tk.PhotoImage(master=self.gameWindow,file=imgPath+r"\Undo.png",width=100,height=100)
-        self.__redoImg = tk.PhotoImage(master=self.gameWindow,file=imgPath+r"\Redo.png",width=100,height=100)
+        undoI = Image.open(imgPath+r"\Undo.png").resize((imLen,imLen))
+        redoI = Image.open(imgPath+r"\Redo.png").resize((imLen,imLen))
+        undoImg = ImageTk.PhotoImage(undoI)
+        redoImg = ImageTk.PhotoImage(redoI)
         #undoLabel = tk.Label(image=self.__undoImg)
-        redoLabel = tk.Label(image=self.__redoImg)
+        #redoLabel = tk.Label(image=self.__redoImg)
         #buttons
         buttonWidthReg = round(self.__dim[1]*0.25)
         buttonWidthSmall = round(self.__dim[1]*0.12)
@@ -85,22 +89,24 @@ class GUIGame():
         quitButtonFrame = tk.Frame(self.gameWindow)
         quitButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthSmall-offsetHoriz,y=self.__dim[1]/2+self.__width/2+3*offsetVert,width=buttonWidthSmall,height=buttonHeight)
         undoButtonFrame = tk.Frame(self.gameWindow)
-        undoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthSmall,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,width=100,height=100)
+        undoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2) #width and height
         redoButtonFrame = tk.Frame(self.gameWindow)
-        redoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-buttonWidthReg,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,width=buttonWidthSmall,height=buttonHeight)
+        redoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2)
         #buttons
         self.saveButton = tk.Button(saveButtonFrame,text="Save",command=saveFunction)
         self.loadButton = tk.Button(loadButtonFrame,text="Load",command=loadFunction)
         self.solveButton = tk.Button(solveButtonFrame,text="Solve",command=solveFunction)
         self.quitButton = tk.Button(quitButtonFrame,text="Quit", command=quitFunction)
-        self.undoButton = tk.Button(undoButtonFrame,text="Undo",image=self.__undoImg, command=undoFunction)
-        self.redoButton = tk.Button(redoButtonFrame,text="Redo", command=redoFunction)
+        self.undoButton = tk.Button(undoButtonFrame,image=undoImg, command=undoFunction)
+        self.undoButton.image = undoImg
+        self.redoButton = tk.Button(redoButtonFrame,image=redoImg, command=redoFunction)
+        self.redoButton.image = redoImg
         self.saveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.loadButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.solveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.quitButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.undoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
-        self.redoButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        self.redoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
 
     #start the game window playing
     def startGame(self):
@@ -131,6 +137,7 @@ class GUIGame():
     def loadPrompt(self):
         st = fd.askopenfilename()
         matchObj = (re.match(r".*\/(.*\.json)$",st))
+        if matchObj is None: return ""
         return matchObj.groups()[0]
 
     #draws the current grid onto the canvas

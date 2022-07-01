@@ -252,13 +252,15 @@ class GUI(UI):
         loadFrame.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert,width=buttonWidth,height=buttonHeight)
         loadButton = tk.Button(loadFrame,text="Load", command=self.playLoad)
         loadButton.pack(expand=True,fill=tk.BOTH)
+        games = os.listdir(sys.path[0]+"\\LocalGames")
+        self.__gameOption = tk.StringVar()
+        self.__gameOption.set(games[0])
+        optionDropDown = tk.OptionMenu(self.__root,self.__gameOption,*games)
+        optionDropDown.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert+round(self.__dim[1]*0.05))
         #quit
-        imgPath1 = sys.path[0]+"\\png.png"
-        imgPath = r"C:\Users\lumsd\Documents\Python\NEAKillerSudoku\png.png"
-        l = tk.Label(self.__root,image=imgPath).pack()
         quitFrame = tk.Frame(self.__root)
         quitFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.92)-buttonHeight,width=buttonWidth,height=buttonHeight)
-        quitButton = tk.Button(quitFrame,text="Quit", image=self.imageBut, command=self.gameOver)
+        quitButton = tk.Button(quitFrame,text="Quit", command=self.gameOver)
         quitButton.pack(expand=True,fill=tk.BOTH)
         #difficulty slider
         sliderFrame = tk.Frame(self.__root)
@@ -319,12 +321,16 @@ class GUI(UI):
         self.display()
         
     def loadButton(self, play=False):
+        if play:
+            value=self.__gameOption.get()
+            print(value)
+            super().load(value)
+            return
         fileName = self.__GUIGame.loadPrompt()
         if fileName:
             super().load(fileName)
-            if not play:
-                self.__GUIGame.resetGame()
-                self.display()
+            self.__GUIGame.resetGame()
+            self.display()
 
     def saveButton(self):
         fileName = self.__GUIGame.savePrompt()
@@ -334,12 +340,18 @@ class GUI(UI):
         self.__GUIGame.gameGrid.bind("<Button 1>",self.__GUIGame.cellClick)
         for number in range(1,10):
             self.__GUIGame.gameWindow.bind(str(number),self.__numInput)
+        self.__GUIGame.gameWindow.bind("<Key-BackSpace>",self.__numInput)
         gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve } #use a dictionary to avoid long if statements
         for x in gameEvents:
             self.__GUIGame.gameWindow.bind(x,gameEvents[x])
 
     def __numInput(self,event):
         if self.__GUIGame.gameComplete(): return
+        if event.keycode==8:
+            cell = self.__GUIGame.getSelected()
+            if self.Game.checkCell(cell[0],cell[1]):
+                self.playMove(cell[0]+1,cell[1]+1,0)
+                self.display()
         if 48<event.keycode<58:
             value = event.keycode-48
             cell = self.__GUIGame.getSelected()

@@ -65,13 +65,13 @@ class UI():
         return True
     
     #save the current game to a game file
-    def save(self,fileName):
+    def save(self,fileName,errors=0):
         if not fileName: return
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
         elif len(fileName)<5:
             fileName+=".json"
-        self.Game.saveGame(fileName)
+        self.Game.saveGame(fileName,errors)
 
     #load a game from a game file
     def load(self, fileName):
@@ -232,6 +232,8 @@ class GUI(UI):
         super().__init__(file)
         self.__root = None
         self.__GUIGame = GUIGame()
+        self.__errorCells = set()
+        self.__errors = 0
     
     def __startMenu(self):
         self.__root = tk.Tk()
@@ -270,6 +272,10 @@ class GUI(UI):
         self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL)
         self.__difficultySlider.pack(expand=True,fill=tk.X)
 
+    def playMove(self, x, y, val):
+        super().playMove(x, y, val)
+        self.__errorCells = self.Game.getErrorCells()
+
     def __gameScreen(self):
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
         self.eventSetup()
@@ -300,6 +306,8 @@ class GUI(UI):
     
     def playRandom(self):
         self.Game.newGame(self.__difficultySlider.get())
+        self.__errorCells = self.Game.getErrorCells()
+        self.__errors = 0
         self.__gameScreen()
     
     def playLoad(self):
@@ -309,6 +317,7 @@ class GUI(UI):
     def undoButton(self):
         if self.__GUIGame.gameComplete(): return
         if super().undo():
+            self.__errorCells = self.Game.getErrorCells()
             self.display()
 
     def redoButton(self):
@@ -323,28 +332,40 @@ class GUI(UI):
     def loadButton(self, play=False):
         if play:
             value=self.__gameOption.get()
-            print(value)
             super().load(value)
+            self.__errorCells = self.Game.getErrorCells()
+            self.__errors = self.Game.getErrors()
             return
         fileName = self.__GUIGame.loadPrompt()
         if fileName:
             super().load(fileName)
             self.__GUIGame.resetGame()
+            self.__errorCells = self.Game.getErrorCells()
+            self.__errors = self.Game.getErrors()
             self.display()
 
     def saveButton(self):
         fileName = self.__GUIGame.savePrompt()
-        super().save(fileName)
+        super().save(fileName,self.__errors)
+
+    def clickCanvas(self,event):
+        self.__GUIGame.cellClick(event)
+        self.display()
 
     def eventSetup(self):
-        self.__GUIGame.gameGrid.bind("<Button 1>",self.__GUIGame.cellClick)
+        self.__GUIGame.gameGrid.bind("<Button 1>",self.clickCanvas)
         for number in range(1,10):
             self.__GUIGame.gameWindow.bind(str(number),self.__numInput)
         self.__GUIGame.gameWindow.bind("<Key-BackSpace>",self.__numInput)
         gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve } #use a dictionary to avoid long if statements
         for x in gameEvents:
             self.__GUIGame.gameWindow.bind(x,gameEvents[x])
+        self.__GUIGame.gameWindow.bind("<Configure>",self.resize)
 
+    def resize(self,event):
+        self.__GUIGame.resize(event)
+        self.display()
+        
     def __numInput(self,event):
         if self.__GUIGame.gameComplete(): return
         if event.keycode==8:
@@ -352,11 +373,16 @@ class GUI(UI):
             if self.Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,0)
                 self.display()
+        err = self.__errorCells
         if 48<event.keycode<58:
             value = event.keycode-48
             cell = self.__GUIGame.getSelected()
             if self.Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,value)
+                if self.__errorCells!=err and self.__errorCells:
+                    self.__errors+=1
+                    if self.__errors>2:
+                        self.__GUIGame.gameOver()
                 if self.Game.checkFull():
                     if self.Game.checkComplete():
                         self.__GUIGame.endGame()
@@ -367,7 +393,7 @@ class GUI(UI):
         self.__root.mainloop()
 
     def display(self):
-        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells())
+        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors)
     
     def gameOver(self):
         self.gameOver = True

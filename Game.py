@@ -1,3 +1,4 @@
+from collections import Counter
 from itertools import product
 import os, sys
 import json
@@ -11,7 +12,7 @@ class Game():
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
         #contains a list of cell coordinates that cannot be edited by the user
-        self.__fixedCells = []
+        self.__fixedCells = set({})
         self.__gen = Generator()
 
     #returns the current game file name
@@ -29,6 +30,27 @@ class Game():
     def fixedCells(self):
         return self.__fixedCells
 
+    def getErrorCells(self):
+        errorCells = set()
+        g= np.array(self.__grid)
+        rs,cs,ns = [],[],[]
+        for i in range(9):
+            r = Counter(g[i])
+            c = Counter(g[:,i])
+            nonet = g[3*(i//3):3*(i//3)+3,3*(i%3):3*(i%3)+3]
+            n = Counter(nonet.flatten())
+            rs.append(r)
+            cs.append(c)
+            ns.append(n)
+        for i,j in product(range(9),range(9)):
+            #check row, col and nonet
+            cell = g[j,i]
+            if cell==0:
+                pass
+            elif rs[j][cell]>1 or cs[i][cell]>1 or ns[3*(j//3)+i//3][cell]>1:
+                errorCells.add( (i,j) )
+        return errorCells
+
     #solves the current grid
     def solve(self):
         #we cannot just solve the current grid - we have to solve a grid without any user changes
@@ -42,12 +64,13 @@ class Game():
         #reset the game
         self.__gameFile = ""
         self.__gameType = 0
+        self.__errors = 0
         self.__fixedCells = []
         self.__grid = self.__gen.genGrid(difficulty)
         self.__getFixedCells()
 
     #saves the current game to memory
-    def saveGame(self,file):
+    def saveGame(self,file,errors=0):
         if file==".json":
             return False
         filePath = "\\LocalGames\\"+file
@@ -58,6 +81,7 @@ class Game():
         else:
             gameObject["board"] = self.__grid
         gameObject["fixedCells"] = self.__fixedCells
+        gameObject["errors"] = errors
         saveFile = open(sys.path[0]+filePath,"w")
         saveFile.write(json.dumps(gameObject,separators=(",",":")))
         saveFile.close()
@@ -71,6 +95,10 @@ class Game():
         loadFile.close()
         self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
+        try:
+            self.__errors = gameObject["errors"]
+        except:
+            self.__errors = 0
         try:
             self.__fixedCells = gameObject["fixedCells"]
         except:
@@ -86,6 +114,8 @@ class Game():
             return True
         except:
             return False
+    def getErrors(self):
+        return self.__errors
 
     def getType(self):
         return self.__gameType

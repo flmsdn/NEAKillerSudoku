@@ -6,6 +6,7 @@ import tkinter.filedialog as fd
 import tkinter.simpledialog as sd
 import re, sys
 from PIL import Image, ImageTk
+import playsound as ps
 
 # handles the Tkinter for the GUI
 class GUIGame():
@@ -25,8 +26,6 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
         self.__gameOver = False
-        self.__curGrid = None
-        self.__fixed = None
     
     # operations on colours
     #https://stackoverflow.com/questions/3380726/converting-an-rgb-color-tuple-to-a-hexidecimal-string
@@ -144,7 +143,6 @@ class GUIGame():
         if [event.width,event.height]!=self.__dim:
             if type(event.widget)==tk.Toplevel:
                 #the window has been resized
-                print([event.width,event.height],"\n",self.__dim)
                 self.__dim = [event.width,event.height]
                 self.loadSizedWindow()
 

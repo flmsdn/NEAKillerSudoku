@@ -3,6 +3,7 @@ import tkinter as tk
 from Game import Game
 from Colours import Colour
 from GUIGame import GUIGame
+import winsound
 
 #Events are going to be used with Exception Handling
 class GameFinish(Exception):
@@ -234,7 +235,13 @@ class GUI(UI):
         self.__GUIGame = GUIGame()
         self.__errorCells = set()
         self.__errors = 0
-    
+        self.__audioPath = sys.path[0]+"\\Resources\\Sounds\\"
+        self.__audioPreset = "retro"
+        self.__soundsDict = {0:"Write.wav",1: "Win.wav",2: "Gameover.wav"}
+
+    def playSound(self,id):
+        winsound.PlaySound(self.__audioPath+self.__audioPreset+self.__soundsDict[id], winsound.SND_ASYNC | winsound.SND_ALIAS)
+
     def __startMenu(self):
         self.__root = tk.Tk()
         self.__root.title("Main Menu")
@@ -379,14 +386,19 @@ class GUI(UI):
             cell = self.__GUIGame.getSelected()
             if self.Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,value)
+                #play sound
+                self.playSound(0)
                 if self.__errorCells!=err and self.__errorCells:
                     self.__errors+=1
                     if self.__errors>2:
                         self.__GUIGame.gameOver()
+                        self.playSound(2)
                 if self.Game.checkFull():
                     if self.Game.checkComplete():
                         self.__GUIGame.endGame()
+                        self.playSound(1)
                 self.display()
+
 
     def run(self):
         self.__startMenu()
@@ -401,4 +413,4 @@ class GUI(UI):
         self.__root = None
 
 if __name__ == "__main__":
-    GUI("TestCaseGame.json").run()
+    pass

@@ -180,7 +180,7 @@ class GUIGame():
         return matchObj.groups()[0]
 
     #draws the current grid onto the canvas
-    def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0):
+    def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None):
         if errorCount>0:
             for err in range(len(self.errorCrosses)):
                 if err<errorCount:
@@ -188,6 +188,7 @@ class GUIGame():
                     self.errorCrosses[err].image = self.__errorCross
         fontNormal = ('Helvetica','20')
         fontFixed = ('Helvetica','20','bold')
+        fontPencil = ('Helvetica','7')
         npGrid = np.array(grid)
         #get line colours
         colDiff = self.__subC(self.__colours["line"],(128,128,128))
@@ -220,6 +221,12 @@ class GUIGame():
                         if npGrid[r,c]==npGrid[self.__selectedCell[1],self.__selectedCell[0]] and [c,r]!=self.__selectedCell:
                             self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.__rgbToHex(self.__colours["selectedRC"]),outline="")
                     self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=lineCol)
+            elif type(pencilMarkings)==list:
+                if pencilMarkings[r][c] != None and pencilMarkings[r][c] != []:
+                    for pencilMark in pencilMarkings[r][c]:
+                        xOffset = (pencilMark-1)%3+1
+                        yOffset = (pencilMark-1)//3+1
+                        self.gameGrid.create_text(xOffset*centreOffset//2+c*cellWidth,yOffset*centreOffset//2+r*cellWidth,text=str(pencilMark),font=fontPencil,fill=lineCol)
         #inner lines
         for r in [1,2,4,5,7,8]:
             self.gameGrid.create_line(mi+r*l, 0, mi+r*l, ms, width=self.GRID_INNER,fill=inlineCol)

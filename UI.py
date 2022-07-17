@@ -311,6 +311,9 @@ class GUI(UI):
     def load(self,event):
         self.loadButton()
     
+    def toggleWrite(self,event):
+        self.Game.toggleWrite()
+
     def playRandom(self):
         self.Game.newGame(self.__difficultySlider.get())
         self.__errorCells = self.Game.getErrorCells()
@@ -364,7 +367,7 @@ class GUI(UI):
         for number in range(1,10):
             self.__GUIGame.gameWindow.bind(str(number),self.__numInput)
         self.__GUIGame.gameWindow.bind("<Key-BackSpace>",self.__numInput)
-        gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve } #use a dictionary to avoid long if statements
+        gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve, "p": self.toggleWrite } #use a dictionary to avoid long if statements
         for x in gameEvents:
             self.__GUIGame.gameWindow.bind(x,gameEvents[x])
         self.__GUIGame.gameWindow.bind("<Configure>",self.resize)
@@ -405,7 +408,7 @@ class GUI(UI):
         self.__root.mainloop()
 
     def display(self):
-        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors)
+        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings())
     
     def gameOver(self):
         self.gameOver = True

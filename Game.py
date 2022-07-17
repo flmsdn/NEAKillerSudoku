@@ -2,6 +2,7 @@ from collections import Counter
 from itertools import product
 import os, sys
 import json
+from tempfile import TemporaryFile
 import numpy as np
 from GridGeneration import Generator
 
@@ -14,6 +15,8 @@ class Game():
         #contains a list of cell coordinates that cannot be edited by the user
         self.__fixedCells = set({})
         self.__gen = Generator()
+        self.__pencilMarkings = [[None for _ in range(9)] for _ in range(9)]
+        self.__writeMode = 0 #0 is pen, 1 is pencil
 
     #returns the current game file name
     def getFile(self):
@@ -25,6 +28,9 @@ class Game():
             for j in range(9):
                 if self.__grid[j][i] != self.EMPTY:
                     self.__fixedCells.append( [i,j] )
+
+    def toggleWrite(self):
+        self.__writeMode = 0 if self.__writeMode else 1
 
     #returns the current list of fixed cell coordinates
     def fixedCells(self):
@@ -80,6 +86,7 @@ class Game():
             gameObject["board"] = self.__grid.tolist()
         else:
             gameObject["board"] = self.__grid
+        gameObject["markings"] = self.__pencilMarkings
         gameObject["fixedCells"] = self.__fixedCells
         gameObject["errors"] = errors
         saveFile = open(sys.path[0]+filePath,"w")
@@ -95,6 +102,8 @@ class Game():
         loadFile.close()
         self.__gameType = gameObject["gameType"]
         self.__grid = gameObject["board"]
+        if "markings" in gameObject:
+            self.__pencilMarkings = gameObject["markings"]
         try:
             self.__errors = gameObject["errors"]
         except:
@@ -114,6 +123,7 @@ class Game():
             return True
         except:
             return False
+
     def getErrors(self):
         return self.__errors
 
@@ -126,8 +136,40 @@ class Game():
     def getCell(self,x,y):
         return self.__grid[y][x]
 
-    def updateCell(self,x,y, value):
-        self.__grid[y][x] = value
+    def getPencilMarkings(self):
+        return self.__pencilMarkings
+
+    def updateCell(self,x,y, value, writeMode=None):
+        if writeMode==None:
+            writeMode = self.__writeMode
+        if writeMode == 0:
+            self.__grid[y][x] = value
+            if type(self.__pencilMarkings[y][x])==list:
+                self.__pencilMarkings[y][x] = None
+            nonetx,nonety = (x//3)*3,(y//3)*3
+            for a in range(9):
+                nx,ny=nonetx+a%3,nonety+a//3
+                if not nx == x and not ny==y:
+                    if type(self.__pencilMarkings[ny][nx])==list:
+                        if value in self.__pencilMarkings[ny][nx]:
+                            self.__pencilMarkings[ny][nx].remove(value)
+                if a!=y:
+                    if type(self.__pencilMarkings[a][x])==list:
+                        if value in self.__pencilMarkings[a][x]:
+                            self.__pencilMarkings[a][x].remove(value)
+                if a!=x:
+                    if type(self.__pencilMarkings[y][a])==list:
+                        if value in self.__pencilMarkings[y][a]:
+                            self.__pencilMarkings[y][a].remove(value)
+        else:
+            if self.__grid[y][x]!=0: return
+            if type(self.__pencilMarkings[y][x])==list:
+                if value in self.__pencilMarkings[y][x]:
+                    self.__pencilMarkings[y][x].remove(value)
+                else:
+                    self.__pencilMarkings[y][x].append(value)
+            else:
+                self.__pencilMarkings[y][x] = [value]
     
     def checkCell(self,x,y):
         return not [x,y] in self.__fixedCells

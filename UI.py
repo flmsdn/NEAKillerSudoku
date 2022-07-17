@@ -284,10 +284,14 @@ class GUI(UI):
         self.__errorCells = self.Game.getErrorCells()
 
     def __gameScreen(self):
-        self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton)
+        self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton,self.toggleWriteButton)
         self.eventSetup()
         self.display()
         self.__GUIGame.startGame()
+
+    def toggleWriteButton(self):
+        self.__GUIGame.updateWriteMode()
+        self.Game.toggleWrite()
 
     def closeMenu(self):
         pass

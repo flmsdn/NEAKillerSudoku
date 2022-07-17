@@ -26,6 +26,7 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
         self.__gameOver = False
+        self.__writeMode = "Pencil"
     
     # operations on colours
     #https://stackoverflow.com/questions/3380726/converting-an-rgb-color-tuple-to-a-hexidecimal-string
@@ -57,8 +58,12 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
 
+    def updateWriteMode(self):
+        self.__writeMode = "Pen" if self.__writeMode ==  "Pencil" else "Pencil"
+        self.writeModeButton.config(text=self.__writeMode)
+    
     #open a new game in its own window
-    def openWindow(self,saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction):
+    def openWindow(self,saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction,toggleWriteMode):
         self.gameWindow = tk.Toplevel()
         self.gameWindow.configure(bg=self.__rgbToHex(self.__colours["background"]))
         self.gameWindow.title("Game")
@@ -68,7 +73,7 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
         self.__gameOver = False
-        self.__functions = [saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction]
+        self.__functions = [saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction,toggleWriteMode]
         #sudoku grid
         self.__width = round(self.__dim[1]*0.7)
         self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0)
@@ -116,6 +121,8 @@ class GUIGame():
         undoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2) #width and height
         redoButtonFrame = tk.Frame(self.gameWindow)
         redoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2)
+        writeModeFrame = tk.Frame(self.gameWindow)
+        writeModeFrame.place(x=self.__dim[0]/2+self.__width/2-imLen-imOffset,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2)
         #buttons
         self.saveButton = tk.Button(saveButtonFrame,text="Save",command=self.__functions[0])
         self.loadButton = tk.Button(loadButtonFrame,text="Load",command=self.__functions[1])
@@ -125,12 +132,14 @@ class GUIGame():
         self.undoButton.image = self.__undoImg
         self.redoButton = tk.Button(redoButtonFrame,image=self.__redoImg, command=self.__functions[4])
         self.redoButton.image = self.__redoImg
+        self.writeModeButton = tk.Button(writeModeFrame,text=self.__writeMode, command=self.__functions[6])
         self.saveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.loadButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.solveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.quitButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.undoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
         self.redoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
+        self.writeModeButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
         self.errorCrosses = [None]*3
         for cross in range(3):
             errorFrame = tk.Frame(self.gameWindow)

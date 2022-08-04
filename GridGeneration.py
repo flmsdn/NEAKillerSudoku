@@ -89,7 +89,9 @@ class Generator():
                 grid[r,c]=oldVal
                 difficulty-=1
         return grid.tolist()
-
+    
+    def genKillerGrid(self,difficulty):
+        pass
 if __name__ == "__main__":
     g = Generator()
     grid = g.genGrid(1)

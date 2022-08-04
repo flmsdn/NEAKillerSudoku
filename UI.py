@@ -412,7 +412,10 @@ class GUI(UI):
         self.__root.mainloop()
 
     def display(self):
-        self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings())
+        if self.Game.getType()==0:
+            self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings())
+        elif self.Game.getType()==1:
+            self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings(),self.Game.getCages(),self.Game.getCagesDict())
     
     def gameOver(self):
         self.gameOver = True

@@ -6,6 +6,14 @@ from tempfile import TemporaryFile
 import numpy as np
 from GridGeneration import Generator
 
+class Cage():
+    def __init__(self, cells, grid, sum=None):
+        if sum==None:
+            self.sum = sum([grid[n[1]][n[0]] for n in cells])
+        else:
+            self.sum = sum
+        self.cells = cells
+
 # handles the board and interactions with the board
 class Game():
     EMPTY = 0
@@ -66,13 +74,17 @@ class Game():
         #remove all user changes from emptied grid and solve
         self.__grid = self.__gen.solveGrid(emptiedGrid)
 
-    def newGame(self, difficulty):
+    def newGame(self, difficulty,gameType=0):
         #reset the game
         self.__gameFile = ""
-        self.__gameType = 0
+        self.__gameType = gameType
         self.__errors = 0
         self.__fixedCells = []
-        self.__grid = self.__gen.genGrid(difficulty)
+        if self.__gameType==0:
+            self.__grid = self.__gen.genGrid(difficulty)
+        elif self.__gameType==1:
+            self.__grid, self.__cages = self.__gen.genKillerGrid(difficulty)
+            self.__cageDict = self.__getCageDict()
         self.__getFixedCells()
 
     #saves the current game to memory
@@ -104,6 +116,9 @@ class Game():
         self.__grid = gameObject["board"]
         if "markings" in gameObject:
             self.__pencilMarkings = gameObject["markings"]
+        if self.__gameType==1:
+            self.__cages = self.__getCages(gameObject["cages"])
+            self.__cageDict = self.__getCageDict()
         try:
             self.__errors = gameObject["errors"]
         except:
@@ -123,15 +138,41 @@ class Game():
             return True
         except:
             return False
+    
+    def coordToInd(self,coord):
+        return coord[0]+coord[1]*9 #counts up with x values
+
+    def indToCoord(self,ind):
+        return [ind%9,ind//9]
 
     def getErrors(self):
         return self.__errors
+
+    def __getCages(self,cageList):
+        cages = []
+        for cage in cageList:
+            cages.append(Cage(cage[1:],self.__grid,cage[0]))
+        return cages
+
+    def __getCageDict(self):
+        cageDict = {}
+        for e,cage in enumerate(self.__cages):
+            for cell in cage.cells:
+                cInd = self.coordToInd(cell)
+                cageDict[cInd] = e
+        return cageDict
 
     def getType(self):
         return self.__gameType
 
     def getGrid(self):
         return self.__grid
+
+    def getCages(self):
+        return self.__cages
+
+    def getCagesDict(self):
+        return self.__cageDict
     
     def getCell(self,x,y):
         return self.__grid[y][x]

@@ -188,8 +188,37 @@ class GUIGame():
         if matchObj is None: return ""
         return matchObj.groups()[0]
 
+    def traverseCage(self,cageCells,offset):
+        points = []
+        x,y = cageCells[0]
+        dir=1
+        translations = [[0,-1],[1,0],[0,1],[-1,0]]
+        cornerPoints = [[-offset,offset],[-offset,-offset],[offset,-offset],[offset,offset]]
+        if len(cageCells)==1:
+            return [[x+a[0],y+a[1]] for a in cornerPoints]
+        done=False
+        while not done:
+            #check directions, starting counterclockwise 90 degrees
+            for direction in [(dir-1+x)%4 for x in range(4)]:
+                #check this direction
+                nCell = [x+translations[direction][0],y+translations[direction][1]]
+                if nCell in cageCells:
+                    dCount = (direction-dir+2)%4
+                    if dCount == 0: dCount=4
+                    for p in [cornerPoints[(dir+a)%4] for a in range(dCount)]:
+                        nPoint = [x+p[0],y+p[1]]
+                        points.append(nPoint)
+                        if len(points)>1:
+                            if nPoint == points[0]:
+                                done = True
+                                break
+                    x,y = nCell
+                    dir = direction
+                    break
+        return points
+
     #draws the current grid onto the canvas
-    def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None):
+    def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None,cages=None,cageDict=None):
         if errorCount>0:
             for err in range(len(self.errorCrosses)):
                 if err<errorCount:
@@ -197,7 +226,9 @@ class GUIGame():
                     self.errorCrosses[err].image = self.__errorCross
         fontNormal = ('Helvetica','20')
         fontFixed = ('Helvetica','20','bold')
-        fontPencil = ('Helvetica','7')
+        fontPencil = ('Helvetica','9')
+        if cages:
+            fontSum = ("Helvetica",'8')
         npGrid = np.array(grid)
         #get line colours
         colDiff = self.__subC(self.__colours["line"],(128,128,128))
@@ -212,7 +243,7 @@ class GUIGame():
         oS = self.GRID_OUTLINE//2
         mi, ms, ma, l = oS, self.__width, self.__width-oS, (self.__width-2*oS)/9
         self.gameGrid.delete("all")
-        cellWidth, centreOffset = self.__width/9, self.__width/18
+        cellWidth, centreOffset = (self.__width)/9, self.__width/18
         #highlighting selected cell
         if not self.__selectedCell is None:
             nx, ny = self.__selectedCell[0]//3-1, self.__selectedCell[1]//3-1
@@ -236,6 +267,16 @@ class GUIGame():
                         xOffset = (pencilMark-1)%3+1
                         yOffset = (pencilMark-1)//3+1
                         self.gameGrid.create_text(xOffset*centreOffset//2+c*cellWidth,yOffset*centreOffset//2+r*cellWidth,text=str(pencilMark),font=fontPencil,fill=lineCol)
+        if cages:
+            sideOffset = 3/8
+            for c in cages:
+                val = c.sum
+                x,y = c.cells[0]
+                self.gameGrid.create_text(mi+centreOffset//4+x*l,mi+centreOffset//4+y*l,text=str(val),font=fontSum,fill=lineCol)
+                points = self.traverseCage(c.cells,sideOffset)
+                #generate cage lines
+                self.gameGrid.create_polygon(*[mi+x*l+centreOffset for xs in points for x in xs],fill="",outline=inlineCol)
+
         #inner lines
         for r in [1,2,4,5,7,8]:
             self.gameGrid.create_line(mi+r*l, 0, mi+r*l, ms, width=self.GRID_INNER,fill=inlineCol)

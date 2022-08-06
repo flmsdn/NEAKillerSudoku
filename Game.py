@@ -21,7 +21,7 @@ class Game():
         self.__gameType = 0 #0 is for regular sudoku, 1 is for killer
         self.__gameFile = ""
         #contains a list of cell coordinates that cannot be edited by the user
-        self.__fixedCells = set({})
+        self.__fixedCells = []
         self.__gen = Generator()
         self.__pencilMarkings = [[None for _ in range(9)] for _ in range(9)]
         self.__writeMode = 0 #0 is pen, 1 is pencil
@@ -101,6 +101,8 @@ class Game():
         gameObject["markings"] = self.__pencilMarkings
         gameObject["fixedCells"] = self.__fixedCells
         gameObject["errors"] = errors
+        if self.__gameType==1:
+            gameObject["cages"] = self.__getCageList()
         saveFile = open(sys.path[0]+filePath,"w")
         saveFile.write(json.dumps(gameObject,separators=(",",":")))
         saveFile.close()
@@ -123,9 +125,9 @@ class Game():
             self.__errors = gameObject["errors"]
         except:
             self.__errors = 0
-        try:
+        if "fixedCells" in gameObject:
             self.__fixedCells = gameObject["fixedCells"]
-        except:
+        else:
             self.__getFixedCells()
             self.saveGame(file)
 
@@ -147,6 +149,12 @@ class Game():
 
     def getErrors(self):
         return self.__errors
+
+    def __getCageList(self):
+        cageList = []
+        for c in self.__cages:
+            cageList.append([c.sum,*c.cells])
+        return cageList
 
     def __getCages(self,cageList):
         cages = []

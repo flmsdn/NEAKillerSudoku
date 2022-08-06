@@ -275,8 +275,7 @@ class GUIGame():
                 self.gameGrid.create_text(mi+centreOffset//4+x*l,mi+centreOffset//4+y*l,text=str(val),font=fontSum,fill=lineCol)
                 points = self.traverseCage(c.cells,sideOffset)
                 #generate cage lines
-                self.gameGrid.create_polygon(*[mi+x*l+centreOffset for xs in points for x in xs],fill="",outline=inlineCol)
-
+                self.gameGrid.create_polygon(*[mi+x*l+centreOffset for xs in points for x in xs],fill="",dash=(3,1,1,1),outline=inlineCol)
         #inner lines
         for r in [1,2,4,5,7,8]:
             self.gameGrid.create_line(mi+r*l, 0, mi+r*l, ms, width=self.GRID_INNER,fill=inlineCol)

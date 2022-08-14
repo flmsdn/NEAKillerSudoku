@@ -2,7 +2,6 @@ from collections import Counter
 from itertools import product
 import os, sys
 import json
-from tempfile import TemporaryFile
 import numpy as np
 from GridGeneration import Generator
 
@@ -63,6 +62,17 @@ class Game():
                 pass
             elif rs[j][cell]>1 or cs[i][cell]>1 or ns[3*(j//3)+i//3][cell]>1:
                 errorCells.add( (i,j) )
+        if self.__gameType==1:
+            #check if cage sums make sense and check for repetition
+            for cage in self.__cages:
+                cells = [g[c[1],c[0]] for c in cage.cells]
+                if (0 in cells and sum(cells)>=cage.sum) or (not 0 in cells and sum(cells)!=cage.sum):
+                    for n in cage.cells:
+                        errorCells.add( tuple(n) )
+                else:
+                    for c in range(len(cells)):
+                        if cells.count(cells[c])>1:
+                            errorCells.add( tuple(cage.cells[c]))
         return errorCells
 
     #solves the current grid

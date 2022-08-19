@@ -1,5 +1,6 @@
 import itertools
 import random
+from tabnanny import check
 import numpy as np
 
 # Generator class for making and solving Sudoku grids
@@ -7,6 +8,9 @@ class Generator():
     def __init__(self):
         self.__nums = list(range(1,10))
         self.__count = 0
+    
+    def check(self,test,array): #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
+        return any(np.array_equal(x, test) for x in array)
 
     def checkComplete(self, grid):
         npBoard = np.array(grid) #get a numpy 2D array of the grid
@@ -90,8 +94,102 @@ class Generator():
                 difficulty-=1
         return grid.tolist()
     
+    def findShape(self,grid,shape):
+        usedCoords = []
+        #shape coordinates are in the form [y,x]
+        #extract all numbers in the shape and the shape coordinates
+        nums = shape[0]
+        shapeCoords = shape[1]
+        #get all coordinates of each number in the shape in a new array
+        numCoords = [(np.argwhere(grid == n)) for n in nums]
+        #now loop through each number
+        shapes = [] #this will contain all of the shapes that match the given criteria
+        for e,coords in enumerate(numCoords):
+            for coord in coords:
+                unusedInd = [i for i in range(len(nums)) if i!=e] #we store the indices of used numbers in the shape so far
+                unusedCoords = shapeCoords[1:]
+                foundShape = True
+                curShape = [list(coord)]
+                while len(unusedCoords):
+                    foundCoord = False
+                    checkCoord = [coord[0]+unusedCoords[-1][0],coord[1]+unusedCoords[-1][1]]
+                    for i in unusedInd:
+                        if self.check(np.array(checkCoord), numCoords[i]) and not (checkCoord in usedCoords):
+                            foundCoord=True
+                            curShape.append(checkCoord)
+                            unusedInd.remove(i)
+                            unusedCoords.pop()
+                            break
+                    if not foundCoord:
+                        foundShape = False
+                        break
+                if foundShape:
+                    shapes.append(curShape) #add the shape coordinates to the found shapes
+                    usedCoords = usedCoords + curShape
+        return shapes
+    
+    def checkForDefiniteCages(self,grid):
+        #copy the filled grid
+        tempG = np.copy(grid)
+        #check for definite 5 cages all the way down to 2
+        #after a cage is found we have a copy of the grid which removes the cage cells (to stop overlaps)
+        #for each of the sizes (5 to 2) we need a set of shapes and sums
+        #we will later load these from a file to make code more readable
+        shapes = [ [ [[0,0],[0,1]], [[0,0],[1,0] ]], [ [[0,0],[1,0],[2,0]], [[0,0],[1,0],[0,1]], [[0,0],[0,1],[0,2]],[[0,0],[1,0],[1,1]],[[0,0],[1,1],[0,1]] ], [ [[0,0],[1,0],[2,0],[3,0]], [[0,0],[0,1],[0,2],[0,3]], [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[1,0],[0,2]], [[0,0],[0,1],[1,0],[2,0]] ], [ [[0,0],[1,0],[0,1],[2,0],[1,1]], [[0,0],[1,0],[0,1],[0,2],[1,1]], [ [0,0], [0,1], [0,2], [0,3], [0,4] ], [ [0,0], [1,0], [2,0], [3,0], [4,0] ] ] ] #ind 0 is size 2, 1 is size 3... 3 is size 5
+        numbers = [ [ [1,2], [1,3], [7,9], [8,9] ], [ [1,2,3], [1,2,4], [6,8,9], [7,8,9] ], [ [1,2,3,4],[1,2,3,5],[6,7,8,9],[5,7,8,9] ], [ [1,2,3,4,5],[1,2,3,4,6],[5,6,7,8,9],[4,6,7,8,9] ] ]
+        cages = []
+        for i in range(4):
+            #i 0 is 5, i 3 is 2
+            indShapes = shapes[3-i]
+            indNumbers = numbers[3-i]
+            for s in indShapes:
+                for ns in indNumbers:
+                    coordinates = self.findShape(tempG, [ns,s] )
+                    if len(coordinates):
+                        for cage in coordinates: #remove each found cage
+                            #cages are stored with x,y coordinates but here it is easier to find y,x so we have to reverse them
+                            cReverse = []
+                            for point in cage:
+                                tempG[ point[0],point[1] ] = 0
+                                cReverse.append([point[1],point[0]])
+                            cages.append( [sum(ns)] + cReverse )
+        return tempG, cages #return the grid with uncaged cells and the cages
+
+    def fillInFinalCages(self,tempGrid):
+        shapes = [ [ [ [0,0] ] ], [ [[0,0],[0,1]], [[0,0],[1,0] ]], [ [[0,0],[1,0],[2,0]], [[0,0],[1,0],[0,1]], [[0,0],[0,1],[0,2]],[[0,0],[1,0],[1,1]],[[0,0],[1,1],[0,1]] ], [ [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[1,0],[0,2]], [[0,0],[0,1],[1,0],[2,0]] ] ] #ind 0 is size 2, 1 is size 3... 3 is size 5
+        cages = []
+        for i in range(4):
+            #i 0 is 4, i 3 is 1
+            indShapes = shapes[3-i]
+            for s in indShapes:
+                coordinates = self.findShape(tempGrid, [range(1,10),s])
+                if len(coordinates):
+                    for cage in coordinates:
+                        cReverse = []
+                        cSum = 0
+                        for point in cage:
+                            cSum += tempGrid[point[0],point[1]]
+                            tempGrid[point[0],point[1]] = 0
+                            cReverse.append([point[1],point[0]])
+                        cages.append( [cSum] + cReverse )
+        return tempGrid, cages
+
     def genKillerGrid(self,difficulty):
-        pass
+        grid = np.array([[0]*9]*9,ndmin=2) #empty grid
+        self.fillGrid(grid) #fill grid in with random values
+        #limit difficulty
+        if difficulty>7: difficulty=7
+        elif difficulty<1: difficulty=1
+        emptiedGrid, cages = self.checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
+        #now we need to find a way to create cages around remaining cells
+        #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
+        print(emptiedGrid)
+        emptiedGrid,newCages = self.fillInFinalCages(emptiedGrid)
+        grid[0,0] = 0
+        print(cages)
+        print(newCages)
+        return grid.tolist(), (cages+newCages)
+
 if __name__ == "__main__":
     g = Generator()
     grid = g.genGrid(1)

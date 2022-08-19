@@ -84,7 +84,7 @@ class Game():
         #remove all user changes from emptied grid and solve
         self.__grid = self.__gen.solveGrid(emptiedGrid)
 
-    def newGame(self, difficulty,gameType=0):
+    def newGame(self, difficulty,gameType=1):
         #reset the game
         self.__gameFile = ""
         self.__gameType = gameType
@@ -93,7 +93,8 @@ class Game():
         if self.__gameType==0:
             self.__grid = self.__gen.genGrid(difficulty)
         elif self.__gameType==1:
-            self.__grid, self.__cages = self.__gen.genKillerGrid(difficulty)
+            self.__grid, cageList = self.__gen.genKillerGrid(difficulty)
+            self.__cages = self.__getCages(cageList)
             self.__cageDict = self.__getCageDict()
         self.__getFixedCells()
 

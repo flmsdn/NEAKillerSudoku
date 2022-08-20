@@ -253,9 +253,10 @@ class GUIGame():
             self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],0,mi+l*(self.__selectedCell[0]+1),ms,fill=self.__rgbToHex(self.__colours["selectedRC"]),outline="")
             self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],mi+l*self.__selectedCell[1],mi+l*(self.__selectedCell[0]+1),mi+l*(self.__selectedCell[1]+1),fill=self.__rgbToHex(self.__colours["selected"]),outline="")
         for r,c in product(range(9),range(9)):
+            if self.__errorChecking and (c,r) in errorCells:
+                    self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.__rgbToHex(self.__colours["errorCell"]),outline="")
             if npGrid[r,c]:
                 if self.__errorChecking and (c,r) in errorCells:
-                    self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.__rgbToHex(self.__colours["errorCell"]),outline="")
                     self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=self.__rgbToHex(self.__colours["error"]))
                 else:
                     if not self.__selectedCell is None:

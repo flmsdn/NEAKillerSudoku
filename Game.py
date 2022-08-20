@@ -62,17 +62,14 @@ class Game():
                 pass
             elif rs[j][cell]>1 or cs[i][cell]>1 or ns[3*(j//3)+i//3][cell]>1:
                 errorCells.add( (i,j) )
-        if self.__gameType==-1:
+        if self.__gameType==1:
             #check if cage sums make sense and check for repetition
             for cage in self.__cages:
                 cells = [g[c[1],c[0]] for c in cage.cells]
-                if sum(cells)>cage.sum:
+                vals = [c for c in cells if c >0]
+                if sum(cells)>cage.sum or len(set(vals)) != len(vals):
                     for n in cage.cells:
                         errorCells.add( tuple(n) )
-                else:
-                    for c in range(len(cells)):
-                        if cells.count(cells[c])>1:
-                            errorCells.add( tuple(cage.cells[c]))
         return errorCells
 
     #solves the current grid

@@ -230,8 +230,4 @@ class Generator():
         return grid.tolist(), (cages+newCages)
 
 if __name__ == "__main__":
-    g = Generator()
-    grid = g.genGrid(1)
-    print(grid)
-    solved = g.solveGrid(grid)
-    print(solved)
+    pass

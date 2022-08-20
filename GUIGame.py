@@ -220,6 +220,7 @@ class GUIGame():
     #draws the current grid onto the canvas
     def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None,cages=None,cageDict=None):
         if errorCount>0:
+            print(errorCells)
             for err in range(len(self.errorCrosses)):
                 if err<errorCount:
                     self.errorCrosses[err].configure(image = self.__errorCross)

@@ -1,13 +1,17 @@
 import itertools
 import random
-from tabnanny import check
 import numpy as np
+import sys
+import json
 
 # Generator class for making and solving Sudoku grids
 class Generator():
     def __init__(self):
         self.__nums = list(range(1,10))
         self.__count = 0
+        #use a config file for shapes - this allows us to change the values easily outside of the code and makes code easier to read
+        shapeCfgFile = open(sys.path[0]+r"\Resources\config\shapes.json","r")
+        self.__shapeConfig = json.load(shapeCfgFile)
     
     def check(self,test,array): #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
         return any(np.array_equal(x, test) for x in array)
@@ -106,6 +110,7 @@ class Generator():
         shapes = [] #this will contain all of the shapes that match the given criteria
         for e,coords in enumerate(numCoords):
             for coord in coords:
+                if list(coord) in usedCoords: break
                 unusedInd = [i for i in range(len(nums)) if i!=e] #we store the indices of used numbers in the shape so far
                 unusedCoords = shapeCoords[1:]
                 foundShape = True
@@ -134,9 +139,8 @@ class Generator():
         #check for definite 5 cages all the way down to 2
         #after a cage is found we have a copy of the grid which removes the cage cells (to stop overlaps)
         #for each of the sizes (5 to 2) we need a set of shapes and sums
-        #we will later load these from a file to make code more readable
-        shapes = [ [ [[0,0],[0,1]], [[0,0],[1,0] ]], [ [[0,0],[1,0],[2,0]], [[0,0],[1,0],[0,1]], [[0,0],[0,1],[0,2]],[[0,0],[1,0],[1,1]],[[0,0],[1,1],[0,1]] ], [ [[0,0],[1,0],[2,0],[3,0]], [[0,0],[0,1],[0,2],[0,3]], [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[1,0],[0,2]], [[0,0],[0,1],[1,0],[2,0]] ], [ [[0,0],[1,0],[0,1],[2,0],[1,1]], [[0,0],[1,0],[0,1],[0,2],[1,1]], [ [0,0], [0,1], [0,2], [0,3], [0,4] ], [ [0,0], [1,0], [2,0], [3,0], [4,0] ] ] ] #ind 0 is size 2, 1 is size 3... 3 is size 5
-        numbers = [ [ [1,2], [1,3], [7,9], [8,9] ], [ [1,2,3], [1,2,4], [6,8,9], [7,8,9] ], [ [1,2,3,4],[1,2,3,5],[6,7,8,9],[5,7,8,9] ], [ [1,2,3,4,5],[1,2,3,4,6],[5,6,7,8,9],[4,6,7,8,9] ] ]
+        shapes = self.__shapeConfig["shapes"] #ind 0 is size 2, 1 is size 3... 3 is size 5
+        numbers = self.__shapeConfig["numbers"]
         cages = []
         for i in range(4):
             #i 0 is 5, i 3 is 2
@@ -156,7 +160,7 @@ class Generator():
         return tempG, cages #return the grid with uncaged cells and the cages
 
     def fillInFinalCages(self,tempGrid):
-        shapes = [ [ [ [0,0] ] ], [ [[0,0],[0,1]], [[0,0],[1,0] ]], [ [[0,0],[1,0],[2,0]], [[0,0],[1,0],[0,1]], [[0,0],[0,1],[0,2]],[[0,0],[1,0],[1,1]],[[0,0],[1,1],[0,1]] ], [ [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[1,0],[0,2]], [[0,0],[0,1],[1,0],[2,0]] ] ] #ind 0 is size 2, 1 is size 3... 3 is size 5
+        shapes = self.__shapeConfig["reducedShapes"] #ind 0 is size 2, 1 is size 3... 3 is size 5
         cages = []
         for i in range(4):
             #i 0 is 4, i 3 is 1
@@ -173,6 +177,30 @@ class Generator():
                             cReverse.append([point[1],point[0]])
                         cages.append( [cSum] + cReverse )
         return tempGrid, cages
+    
+    def iterateKillerGrid(self,grid,saveState,cageDict,cages):
+        #iterate over all cells
+        for row, col in itertools.product(range(9),range(9)):
+            if grid[row][col]==0:
+                #if the value is 0, iterate over all possible values
+                for num in range(1,10):
+                    if not num in grid[row,:]:
+                        if not num in grid[:,col]:
+                            nonetX, nonetY = col//3, row//3
+                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
+                            if not num in nonet:
+                                grid[row][col] = num
+                                if 0 in grid:
+                                    if self.iterateGrid(grid,saveState):
+                                        return True
+                                else:
+                                    self.__count+=1
+                                    if saveState:
+                                        grid[row, col] = num
+                                    break
+                break
+        if not saveState:
+            grid[row, col]=0
 
     def genKillerGrid(self,difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
@@ -183,11 +211,22 @@ class Generator():
         emptiedGrid, cages = self.checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
         #now we need to find a way to create cages around remaining cells
         #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
-        print(emptiedGrid)
         emptiedGrid,newCages = self.fillInFinalCages(emptiedGrid)
-        grid[0,0] = 0
-        print(cages)
-        print(newCages)
+        '''
+        while difficulty:
+            #optimised randomly getting a cell
+            cells = list(zip(*np.where(grid>0)))
+            r,c = random.choice(cells)
+            oldVal = grid[r,c]
+            grid[r,c]=0
+            #copy grid so no permanent change are made
+            gridCopy = np.copy(grid)
+            self.__count=0
+            self.iterateKillerGrid(gridCopy,False)
+            if self.__count!=1:
+                grid[r,c]=oldVal
+                difficulty-=1'''
+        grid = np.array([[0]*9]*9,ndmin=2) #empty grid
         return grid.tolist(), (cages+newCages)
 
 if __name__ == "__main__":

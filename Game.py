@@ -62,11 +62,11 @@ class Game():
                 pass
             elif rs[j][cell]>1 or cs[i][cell]>1 or ns[3*(j//3)+i//3][cell]>1:
                 errorCells.add( (i,j) )
-        if self.__gameType==1:
+        if self.__gameType==-1:
             #check if cage sums make sense and check for repetition
             for cage in self.__cages:
                 cells = [g[c[1],c[0]] for c in cage.cells]
-                if (0 in cells and sum(cells)>=cage.sum) or (not 0 in cells and sum(cells)!=cage.sum):
+                if sum(cells)>cage.sum:
                     for n in cage.cells:
                         errorCells.add( tuple(n) )
                 else:

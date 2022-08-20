@@ -4,6 +4,14 @@ import numpy as np
 import sys
 import json
 
+class Cage():
+    def __init__(self, cells, grid, sum=None):
+        if sum==None:
+            self.sum = sum([grid[n[1]][n[0]] for n in cells])
+        else:
+            self.sum = sum
+        self.cells = cells
+
 # Generator class for making and solving Sudoku grids
 class Generator():
     def __init__(self):
@@ -26,6 +34,32 @@ class Generator():
                 return False
         return True
 
+    def coordToInd(self,coord):
+        return coord[0]+coord[1]*9 #counts up with x values
+
+    def indToCoord(self,ind):
+        return [ind%9,ind//9]
+
+    def getCageList(self,cages):
+        cageList = []
+        for c in cages:
+            cageList.append([c.sum,*c.cells])
+        return cageList
+    
+    def getCages(self,cageList,grid):
+        cages = []
+        for cage in cageList:
+            cages.append(Cage(cage[1:],grid,cage[0]))
+        return cages
+    
+    def getCageDict(self,cages):
+        cageDict = {}
+        for e,cage in enumerate(cages):
+            for cell in cage.cells:
+                cInd = self.coordToInd(cell)
+                cageDict[cInd] = e
+        return cageDict
+    
     #logic from https://www.101computing.net/sudoku-generator-algorithm/
     def fillGrid(self,grid):
         for row, col in itertools.product(range(9),range(9)):

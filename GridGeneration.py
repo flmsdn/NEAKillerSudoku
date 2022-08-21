@@ -212,7 +212,7 @@ class Generator():
                         cages.append( [cSum] + cReverse )
         return tempGrid, cages
     
-    def iterateKillerGrid(self,grid,saveState,cageDict,cages):
+    def iterateKillerGrid(self,grid,saveState):
         #iterate over all cells
         for row, col in itertools.product(range(9),range(9)):
             if grid[row][col]==0:
@@ -223,15 +223,19 @@ class Generator():
                             nonetX, nonetY = col//3, row//3
                             nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
                             if not num in nonet:
-                                grid[row][col] = num
-                                if 0 in grid:
-                                    if self.iterateGrid(grid,saveState):
-                                        return True
-                                else:
-                                    self.__count+=1
-                                    if saveState:
-                                        grid[row, col] = num
-                                    break
+                                cInd = self.__cageDict[self.coordToInd([col,row])]
+                                cage = self.__cages[cInd]
+                                vals = [c for c in self.__cellList[cInd] if c >0]
+                                if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
+                                    grid[row][col] = num
+                                    if 0 in grid:
+                                        if self.iterateKillerGrid(grid,saveState):
+                                            return True
+                                    else:
+                                        self.__count+=1
+                                        if saveState:
+                                            grid[row, col] = num
+                                        break
                 break
         if not saveState:
             grid[row, col]=0
@@ -246,7 +250,12 @@ class Generator():
         #now we need to find a way to create cages around remaining cells
         #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
         emptiedGrid,newCages = self.fillInFinalCages(emptiedGrid)
-        '''
+        allCages = cages+newCages
+        self.__cages = self.getCages(allCages,grid)
+        self.__cageDict = self.getCageDict(self.__cages)
+        self.__cellList = []
+        for cage in self.__cages:
+            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells]) #maybe generate at start and store? might help stack overflow to store as a private attribute
         while difficulty:
             #optimised randomly getting a cell
             cells = list(zip(*np.where(grid>0)))
@@ -259,9 +268,8 @@ class Generator():
             self.iterateKillerGrid(gridCopy,False)
             if self.__count!=1:
                 grid[r,c]=oldVal
-                difficulty-=1'''
-        grid = np.array([[0]*9]*9,ndmin=2) #empty grid
-        return grid.tolist(), (cages+newCages)
+                difficulty-=1
+        return grid.tolist(), allCages
 
 if __name__ == "__main__":
     pass

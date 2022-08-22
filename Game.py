@@ -71,7 +71,11 @@ class Game():
         for a in self.__fixedCells:
             emptiedGrid[a[1],a[0]] = self.__grid[a[1]][a[0]]
         #remove all user changes from emptied grid and solve
-        self.__grid = self.__gen.solveGrid(emptiedGrid)
+        if self.__gameType==0:
+            self.__grid = self.__gen.solveGrid(emptiedGrid)
+        elif self.__gameType==1:
+            self.__grid = self.__gen.solveKillerGrid(emptiedGrid,self.__cages)
+            print(self.__grid)
 
     def newGame(self, difficulty,gameType=1):
         #reset the game

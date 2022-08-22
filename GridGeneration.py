@@ -240,6 +240,34 @@ class Generator():
         if not saveState:
             grid[row, col]=0
 
+    def checkKillerComplete(self, grid):
+        npBoard = np.array(grid) #get a numpy 2D array of the grid
+        gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
+        gridCols = [npBoard[:,j] for j in range(9)] #get all of the grid columns
+        gridNonets = [npBoard[i:i+3,j:j+3].flatten() for i in [0,3,6] for j in [0,3,6]] #get all of the nonets in the grid
+        cageValid = True
+        for e,cage in enumerate(self.__cages):
+            n=[grid[c[1],c[0]] for c in cage.cells]
+            print(n)
+            if len(n)!=len(set(n)) or sum(n)!=cage.sum:
+                return False
+        for line in np.vstack( [gridRows, gridCols, gridNonets] ): #put all of these groups together and iterate over them
+            if len(np.unique(line))<9:
+                return False
+        return True
+
+    def solveKillerGrid(self,grid,allCages):
+        self.__cages = allCages
+        self.__cageDict = self.getCageDict(self.__cages)
+        self.__cellList = []
+        for cage in self.__cages:
+            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
+        while True:
+            gridTrial = np.copy(grid)
+            self.fillGrid(gridTrial)
+            if self.checkKillerComplete(gridTrial): #check Killer
+                return gridTrial.tolist()
+
     def genKillerGrid(self,difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
         self.fillGrid(grid) #fill grid in with random values
@@ -255,7 +283,8 @@ class Generator():
         self.__cageDict = self.getCageDict(self.__cages)
         self.__cellList = []
         for cage in self.__cages:
-            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells]) #maybe generate at start and store? might help stack overflow to store as a private attribute
+            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
+        #TODO potential try generating from no cells and filling up may work better for killers
         while difficulty:
             #optimised randomly getting a cell
             cells = list(zip(*np.where(grid>0)))

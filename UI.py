@@ -286,8 +286,8 @@ class GUI(UI):
     def __gameScreen(self):
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton,self.toggleWriteButton)
         self.eventSetup()
-        self.display()
         self.__GUIGame.startGame()
+        #self.display()
 
     def toggleWriteButton(self):
         self.__GUIGame.updateWriteMode()

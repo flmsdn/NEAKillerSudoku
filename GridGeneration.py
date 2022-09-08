@@ -43,7 +43,7 @@ class Generator():
     def getCageList(self,cages):
         cageList = []
         for c in cages:
-            cageList.append([c.sum,*c.cells])
+            cageList.append([int(c.sum),*[[int(cell[0]),int(cell[1])] for cell in c.cells]])
         return cageList
     
     def getCages(self,cageList,grid):
@@ -248,7 +248,6 @@ class Generator():
         cageValid = True
         for e,cage in enumerate(self.__cages):
             n=[grid[c[1],c[0]] for c in cage.cells]
-            print(n)
             if len(n)!=len(set(n)) or sum(n)!=cage.sum:
                 return False
         for line in np.vstack( [gridRows, gridCols, gridNonets] ): #put all of these groups together and iterate over them

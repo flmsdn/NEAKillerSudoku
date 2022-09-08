@@ -75,7 +75,6 @@ class Game():
             self.__grid = self.__gen.solveGrid(emptiedGrid)
         elif self.__gameType==1:
             self.__grid = self.__gen.solveKillerGrid(emptiedGrid,self.__cages)
-            print(self.__grid)
 
     def newGame(self, difficulty,gameType=1):
         #reset the game
@@ -124,7 +123,7 @@ class Game():
             self.__pencilMarkings = gameObject["markings"]
         if self.__gameType==1:
             self.__cages = self.__gen.getCages(gameObject["cages"],self.__grid)
-            self.__cageDict = self.__gen.getCageDict()
+            self.__cageDict = self.__gen.getCageDict(self.__cages)
         try:
             self.__errors = gameObject["errors"]
         except:

@@ -27,6 +27,12 @@ class GUIGame():
         self.__gameComplete = False
         self.__gameOver = False
         self.__writeMode = "Pencil"
+        self.errorCrosses = None
+        self.loadedImages = []
+        imgPath = sys.path[0]+r"\Resources"
+        imageURLs = [r"\Undo.png",r"\Redo.png",r"\EmptyCross.png",r"\ErrorCross.png"]
+        for url in imageURLs:
+            self.loadedImages.append(Image.open(imgPath+url))
     
     # operations on colours
     #https://stackoverflow.com/questions/3380726/converting-an-rgb-color-tuple-to-a-hexidecimal-string
@@ -81,27 +87,26 @@ class GUIGame():
         self.loadSizedWindow()
     
     def loadSizedWindow(self):
+        preservedWidgets = [tk.Canvas]
         for widget in self.gameWindow.winfo_children():
-            if type(widget)!=tk.Canvas:
+            if not type(widget) in preservedWidgets and not widget in self.errorCrosses:
                 widget.destroy()
         #undo and redo images
         self.__width = round(self.__dim[1]*0.7)
         scale = self.__width/self.gameGrid.winfo_width()
         self.gameGrid.config(width = self.__width,height=self.__width)
         self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
-        #self.gameGrid.scale("all",0,0,scale,scale)
         imLen = round(self.__dim[1]*0.05)
         crossLen = round(self.__dim[1]*0.1)
         imOffset = round(self.__dim[1]*0.12)
-        imgPath = sys.path[0]+r"\Resources"
-        undoI = Image.open(imgPath+r"\Undo.png").resize((imLen,imLen))
-        redoI = Image.open(imgPath+r"\Redo.png").resize((imLen,imLen))
-        emptyI = Image.open(imgPath+r"\EmptyCross.png").resize((crossLen*2,crossLen*2))
-        errorI = Image.open(imgPath+r"\ErrorCross.png").resize((crossLen*2,crossLen*2))
-        self.__undoImg = ImageTk.PhotoImage(undoI)
-        self.__redoImg = ImageTk.PhotoImage(redoI)
-        self.__emptyCross = ImageTk.PhotoImage(emptyI)
-        self.__errorCross = ImageTk.PhotoImage(errorI)
+        self.undoI = self.loadedImages[0].resize((imLen,imLen))
+        self.redoI = self.loadedImages[1].resize((imLen,imLen))
+        self.emptyI = self.loadedImages[2].resize((crossLen*2,crossLen*2))
+        self.errorI = self.loadedImages[3].resize((crossLen*2,crossLen*2))
+        self.__undoImg = ImageTk.PhotoImage(self.undoI)
+        self.__redoImg = ImageTk.PhotoImage(self.redoI)
+        self.__emptyCross = ImageTk.PhotoImage(self.emptyI)
+        self.__errorCross = ImageTk.PhotoImage(self.errorI)
         #buttons
         buttonWidthReg = round(self.__dim[1]*0.25)
         buttonWidthSmall = round(self.__dim[1]*0.12)
@@ -141,10 +146,14 @@ class GUIGame():
         self.redoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
         self.writeModeButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
         self.errorCrosses = [None]*3
+        errorFrames = [None]*3
         for cross in range(3):
-            errorFrame = tk.Frame(self.gameWindow)
-            errorFrame.place(x=self.__dim[0]/2-self.__width/2 + cross*crossLen,y=self.__dim[1]/2+self.__width/2,width=crossLen,height=crossLen)
-            self.errorCrosses[cross] = tk.Label(errorFrame, image = self.__emptyCross, background=self.__rgbToHex(self.__colours["background"]))
+            errorFrames[cross] = tk.Frame(self.gameWindow)
+            errorFrames[cross].place(x=self.__dim[0]/2-self.__width/2 + cross*crossLen,y=self.__dim[1]/2+self.__width/2,width=crossLen,height=crossLen)
+            self.errorCrosses[cross] = tk.Label(errorFrames[cross], image = self.__emptyCross, background=self.__rgbToHex(self.__colours["background"]))
+            self.errorCrosses[cross].configure(image = self.__errorCross)
+            self.errorCrosses[cross].image = self.__errorCross
+            self.errorCrosses[cross].configure(image = self.__emptyCross)
             self.errorCrosses[cross].image = self.__emptyCross
             self.errorCrosses[cross].pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
 
@@ -221,9 +230,13 @@ class GUIGame():
     def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None,cages=None,cageDict=None):
         if errorCount>0:
             for err in range(len(self.errorCrosses)):
-                if err<errorCount:
-                    self.errorCrosses[err].configure(image = self.__errorCross)
-                    self.errorCrosses[err].image = self.__errorCross
+                if err<errorCount and self.errorCrosses[err]:
+                    try:
+                        self.errorCrosses[err].config(image = self.__errorCross) #error occurs on this line not next
+                        self.errorCrosses[err].image = self.__errorCross
+                    except Exception as e:
+                        #image isn't loaded yet
+                        print("Image Not Loaded Yet")
         fontNormal = ('Helvetica','20')
         fontFixed = ('Helvetica','20','bold')
         fontPencil = ('Helvetica','9')

@@ -1,5 +1,6 @@
 import os, sys
 import tkinter as tk
+from Database import DBManager
 from Game import Game
 from Colours import Colour
 from GUIGame import GUIGame
@@ -233,6 +234,8 @@ class GUI(UI):
         super().__init__(file)
         self.__root = None
         self.__GUIGame = GUIGame()
+        self.__settingsWindow = None
+        self.__dataBaseManager = DBManager()
         self.__errorCells = set()
         self.__errors = 0
         self.__audioPath = sys.path[0]+"\\Resources\\Sounds\\"
@@ -271,6 +274,11 @@ class GUI(UI):
         quitFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.92)-buttonHeight,width=buttonWidth,height=buttonHeight)
         quitButton = tk.Button(quitFrame,text="Quit", command=self.gameOver)
         quitButton.pack(expand=True,fill=tk.BOTH)
+        #settings
+        settingsFrame = tk.Frame(self.__root)
+        settingsFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.08),width=buttonWidth,height=buttonHeight)
+        settingsButton = tk.Button(settingsFrame,text="Settings",command=self.__openSettingsWindow)
+        settingsButton.pack(expand=True,fill=tk.BOTH)
         #difficulty slider
         sliderFrame = tk.Frame(self.__root)
         sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*2)
@@ -282,6 +290,70 @@ class GUI(UI):
     def playMove(self, x, y, val):
         super().playMove(x, y, val)
         self.__errorCells = self.Game.getErrorCells()
+
+    def __openSettingsWindow(self):
+        if self.__GUIGame.gameWindow==None: #game is not open
+            self.__settingsWindow = tk.Toplevel()
+            self.__settingsWindow.title("Settings")
+            dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
+            self.__settingsWindow.geometry("%dx%d+0+0" % dims)
+            frameHeight = round(dims[1]*0.03)
+            self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23))
+            self.__accountFrame.pack()
+            inputFrameU = tk.Frame(self.__accountFrame)
+            inputFrameU.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
+            textFrameU = tk.Frame(self.__accountFrame)
+            textFrameU.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
+            inputFrameP = tk.Frame(self.__accountFrame)
+            inputFrameP.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
+            textFrameP = tk.Frame(self.__accountFrame)
+            textFrameP.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
+            self.__logInInputs = [None]*2
+            #username row
+            self.__logInInputs[0] = tk.Entry(inputFrameU)
+            usernameText = tk.Label(textFrameU,text="Username:")
+            usernameText.pack(side=tk.RIGHT,anchor=tk.NE)
+            self.__logInInputs[0].pack(side=tk.LEFT,anchor=tk.NW)
+            #password
+            self.__logInInputs[1] = tk.Entry(inputFrameP,show="*")
+            passwordText = tk.Label(textFrameP,text="Password:")
+            passwordText.pack(side=tk.RIGHT,anchor=tk.E)
+            self.__logInInputs[1].pack(side=tk.LEFT)
+            #buttons
+            logInFrame = tk.Frame(self.__accountFrame)
+            logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
+            signUpFrame = tk.Frame(self.__accountFrame)
+            signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
+            logInButton = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
+            signUpButton = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
+            signUpButton.pack(fill=tk.BOTH,expand=True)
+            logInButton.pack(fill=tk.BOTH,expand=True)
+            settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
+            settingsMenu.pack()
+            settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
+            settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.02))
+            #this needs to be last for layering
+            if self.__dataBaseManager.checkLoggedIn():
+                self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
+                self.__accountFrame.pack_forget()
+            else:
+                self.__logInMessage = tk.Label(self.__settingsWindow)
+                self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
+
+    def __attemptLogIn(self):
+        successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs])
+        if successfulLogIn:
+            dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
+            self.__accountFrame.pack_forget()
+            self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
+            self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
+    
+    def __attemptSignUp(self):
+        successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs])
+        if successfulSignUp:
+            dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
+            self.__accountFrame.pack_forget()
+            self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
 
     def __gameScreen(self):
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton,self.toggleWriteButton)

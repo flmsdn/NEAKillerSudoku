@@ -170,6 +170,7 @@ class GUIGame():
     
     def closeGame(self):
         self.gameWindow.destroy()
+        self.gameWindow = None
     
     #return the selected cell
     def getSelected(self):

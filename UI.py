@@ -102,7 +102,7 @@ class Terminal(UI):
 
     def run(self):
         print(Colour.BLUE+Colour.BOLD+"Sudoku"+Colour.ENDC+"\n")
-        print(open("Instructions.txt").read(),"\n\nPress Enter to Play")
+        print(open(sys.path[0]+"\\Resources\\Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
 
@@ -144,7 +144,7 @@ class Terminal(UI):
                 if not 0<diff<8: raise ValueError
             except:
                 diff = 2
-            self.Game.newGame(diff)
+            self.Game.newGame(diff,0)
 
         def validInp(text, val):
             value = input(text)
@@ -292,53 +292,62 @@ class GUI(UI):
         self.__errorCells = self.Game.getErrorCells()
 
     def __openSettingsWindow(self):
-        if self.__GUIGame.gameWindow==None: #game is not open
-            self.__settingsWindow = tk.Toplevel()
-            self.__settingsWindow.title("Settings")
-            dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            self.__settingsWindow.geometry("%dx%d+0+0" % dims)
-            frameHeight = round(dims[1]*0.03)
-            self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23))
-            self.__accountFrame.pack()
-            inputFrameU = tk.Frame(self.__accountFrame)
-            inputFrameU.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
-            textFrameU = tk.Frame(self.__accountFrame)
-            textFrameU.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
-            inputFrameP = tk.Frame(self.__accountFrame)
-            inputFrameP.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
-            textFrameP = tk.Frame(self.__accountFrame)
-            textFrameP.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
-            self.__logInInputs = [None]*2
-            #username row
-            self.__logInInputs[0] = tk.Entry(inputFrameU)
-            usernameText = tk.Label(textFrameU,text="Username:")
-            usernameText.pack(side=tk.RIGHT,anchor=tk.NE)
-            self.__logInInputs[0].pack(side=tk.LEFT,anchor=tk.NW)
-            #password
-            self.__logInInputs[1] = tk.Entry(inputFrameP,show="*")
-            passwordText = tk.Label(textFrameP,text="Password:")
-            passwordText.pack(side=tk.RIGHT,anchor=tk.E)
-            self.__logInInputs[1].pack(side=tk.LEFT)
-            #buttons
-            logInFrame = tk.Frame(self.__accountFrame)
-            logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-            signUpFrame = tk.Frame(self.__accountFrame)
-            signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-            logInButton = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
-            signUpButton = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
-            signUpButton.pack(fill=tk.BOTH,expand=True)
-            logInButton.pack(fill=tk.BOTH,expand=True)
-            settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
-            settingsMenu.pack()
-            settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
-            settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.02))
-            #this needs to be last for layering
-            if self.__dataBaseManager.checkLoggedIn():
-                self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
-                self.__accountFrame.pack_forget()
+        if self.__GUIGame.gameWindow!=None: #make sure game is not open at same time as settings window
+            if not self.__GUIGame.gameWindow.winfo_exists():
+                self.__GUIGame.gameWindow = None
             else:
-                self.__logInMessage = tk.Label(self.__settingsWindow)
-                self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
+                return
+        self.__settingsWindow = tk.Toplevel()
+        self.__settingsWindow.title("Settings")
+        self.__settingsWindow.state("zoomed")
+        dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
+        self.__settingsWindow.geometry("%dx%d+0+0" % dims)
+        frameHeight = round(dims[1]*0.03)
+        self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23))
+        self.__accountFrame.pack()
+        inputFrameU = tk.Frame(self.__accountFrame)
+        inputFrameU.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
+        textFrameU = tk.Frame(self.__accountFrame)
+        textFrameU.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
+        inputFrameP = tk.Frame(self.__accountFrame)
+        inputFrameP.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
+        textFrameP = tk.Frame(self.__accountFrame)
+        textFrameP.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
+        self.__logInInputs = [None]*2
+        #username row
+        self.__logInInputs[0] = tk.Entry(inputFrameU)
+        usernameText = tk.Label(textFrameU,text="Username:")
+        usernameText.pack(side=tk.RIGHT,anchor=tk.NE)
+        self.__logInInputs[0].pack(side=tk.LEFT,anchor=tk.NW)
+        #password
+        self.__logInInputs[1] = tk.Entry(inputFrameP,show="*")
+        passwordText = tk.Label(textFrameP,text="Password:")
+        passwordText.pack(side=tk.RIGHT,anchor=tk.E)
+        self.__logInInputs[1].pack(side=tk.LEFT)
+        #buttons
+        logInFrame = tk.Frame(self.__accountFrame)
+        logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
+        signUpFrame = tk.Frame(self.__accountFrame)
+        signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
+        logInButton = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
+        signUpButton = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
+        signUpButton.pack(fill=tk.BOTH,expand=True)
+        logInButton.pack(fill=tk.BOTH,expand=True)
+        settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
+        settingsMenu.pack()
+        settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
+        settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.02))
+        quitFrame = tk.Frame(self.__settingsWindow)
+        quitFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.85),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
+        quitButton = tk.Button(quitFrame, text="Close", command=self.__closeSettings)
+        quitButton.pack(expand=True,fill=tk.BOTH)
+        #this needs to be last for layering
+        if self.__dataBaseManager.checkLoggedIn():
+            self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
+            self.__accountFrame.pack_forget()
+        else:
+            self.__logInMessage = tk.Label(self.__settingsWindow)
+            self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
     def __attemptLogIn(self):
         successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs])
@@ -355,7 +364,16 @@ class GUI(UI):
             self.__accountFrame.pack_forget()
             self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
 
+    def __closeSettings(self):
+        self.__settingsWindow.destroy()
+        self.__settingsWindow = None
+
     def __gameScreen(self):
+        if self.__settingsWindow!=None:
+            if not self.__settingsWindow.winfo_exists():
+                self.__settingsWindow=None
+            else:
+                return #stop the game opening when the settings window is open
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton,self.toggleWriteButton)
         self.eventSetup()
         self.__GUIGame.startGame()
@@ -475,7 +493,6 @@ class GUI(UI):
                         self.__GUIGame.endGame()
                         self.playSound(1)
                 self.display()
-
 
     def run(self):
         self.__startMenu()

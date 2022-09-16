@@ -1,4 +1,0 @@
-To play you will be shown the Sudoku grid
-You can change the value of any cell that isn't filled in at the start
-The additional keybinds are as follows:
-t: Terminate Game,   u: Undo Action,   r: Redo Action, s: Save Game, l: Load Game, f: Solve Grid

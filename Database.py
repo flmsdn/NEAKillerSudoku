@@ -17,7 +17,6 @@ class DBManager():
         print("Connected to Database")
         checkTable = """SELECT name FROM sqlite_master WHERE type='table' AND name='accounts' """
         self.__cur.execute(checkTable)
-        print(self.__cur.fetchone())
         if self.__cur.fetchone()==None:
             #table doesn't exist, database is new so create the table
             self.__createAccountsTable()

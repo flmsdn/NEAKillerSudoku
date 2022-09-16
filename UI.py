@@ -359,7 +359,6 @@ class GUI(UI):
         self.__GUIGame.openWindow(self.saveButton,self.loadButton,self.closeGame,self.undoButton,self.redoButton,self.solveButton,self.toggleWriteButton)
         self.eventSetup()
         self.__GUIGame.startGame()
-        #self.display()
 
     def toggleWriteButton(self):
         self.__GUIGame.updateWriteMode()
@@ -369,7 +368,6 @@ class GUI(UI):
         pass
 
     def closeGame(self):
-        #TODO add prompt for saving
         self.__GUIGame.closeGame()
     
     def undo(self,event):

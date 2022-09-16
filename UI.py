@@ -1,6 +1,7 @@
 import os, sys
 import tkinter as tk
 from Database import DBManager
+from Settings import SettingsManager
 from Game import Game
 from Colours import Colour
 from GUIGame import GUIGame
@@ -236,6 +237,10 @@ class GUI(UI):
         self.__GUIGame = GUIGame()
         self.__settingsWindow = None
         self.__dataBaseManager = DBManager()
+        self.__settingsManager = SettingsManager()
+        accountDetails = self.__settingsManager.getAccount()
+        if accountDetails[0]!=None:
+            self.__dataBaseManager.checkAccountLogin(*accountDetails)
         self.__errorCells = set()
         self.__errors = 0
         self.__audioPath = sys.path[0]+"\\Resources\\Sounds\\"
@@ -352,6 +357,7 @@ class GUI(UI):
     def __attemptLogIn(self):
         successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs])
         if successfulLogIn:
+            self.__settingsManager.updateAccount(*self.__dataBaseManager.getAccountDetails())
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
             self.__accountFrame.pack_forget()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())

@@ -6,9 +6,6 @@ class DBManager():
     def __init__(self):
         self.__loggedInAccount = None #if an account is logged in then this is the account name, otherwise the account data cannot be accessed
         self.initialiseConnection()
-    
-    def displayAccountPage(self):
-        pass
 
     def initialiseConnection(self):
         path = sys.path[0]+"\\Resources\\Accounts.db"
@@ -33,6 +30,9 @@ class DBManager():
     def attemptLogIn(self,username,password):
         pwHash = self.__hashPassword(password)
         #check if the password hash in the table is in the account
+        return self.checkAccountLogin(username,pwHash)
+    
+    def checkAccountLogin(self,username,pwHash):
         hashQuery = """SELECT pwhash FROM accounts WHERE name='"""+username+"'"
         res = self.__cur.execute(hashQuery)
         r=res.fetchone()
@@ -41,7 +41,7 @@ class DBManager():
                 self.__loggedInAccount=username #log in
                 return True
         return False
-    
+
     def attemptSignUp(self,username,password):
         pwHash = self.__hashPassword(password)
         #check if the password hash in the table is in the account
@@ -63,6 +63,13 @@ class DBManager():
 
     def getUsername(self):
         return self.__loggedInAccount
+    
+    def getAccountDetails(self):
+        hashQuery = """SELECT pwhash FROM accounts WHERE name='"""+self.__loggedInAccount+"'"
+        res = self.__cur.execute(hashQuery)
+        r=res.fetchone()
+        if r: #check if hashes match and if so log in
+            return (self.__loggedInAccount,r[0])
         
     def __hashPassword(self,password):
         hashAlgorithm = hashlib.sha256()

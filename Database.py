@@ -64,13 +64,26 @@ class DBManager():
     def getUsername(self):
         return self.__loggedInAccount
     
+    def updatePassword(self,username,password):
+        if username == self.__loggedInAccount:
+            pwHash = self.__hashPassword(password)
+            passwordUpdate = f"UPDATE accounts SET pwhash = '{pwHash}' WHERE name = '{username}'"
+            self.__cur.execute(passwordUpdate)
+            self.__connection.commit()
+            print("Password Updated")
+            return True
+        return False
+
     def getAccountDetails(self):
         hashQuery = """SELECT pwhash FROM accounts WHERE name='"""+self.__loggedInAccount+"'"
         res = self.__cur.execute(hashQuery)
         r=res.fetchone()
         if r: #check if hashes match and if so log in
             return (self.__loggedInAccount,r[0])
-        
+    
+    def signOut(self):
+        self.__loggedInAccount = None
+
     def __hashPassword(self,password):
         hashAlgorithm = hashlib.sha256()
         hashAlgorithm.update(password.encode("utf-8"))

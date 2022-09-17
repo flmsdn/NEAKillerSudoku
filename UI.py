@@ -302,12 +302,14 @@ class GUI(UI):
                 self.__GUIGame.gameWindow = None
             else:
                 return
+        #create the window
         self.__settingsWindow = tk.Toplevel()
         self.__settingsWindow.title("Settings")
         self.__settingsWindow.state("zoomed")
         dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
         self.__settingsWindow.geometry("%dx%d+0+0" % dims)
         frameHeight = round(dims[1]*0.03)
+        #create the account log in and sign in frame
         self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23))
         self.__accountFrame.pack()
         inputFrameU = tk.Frame(self.__accountFrame)
@@ -318,7 +320,7 @@ class GUI(UI):
         inputFrameP.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
         textFrameP = tk.Frame(self.__accountFrame)
         textFrameP.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
-        self.__logInInputs = [None]*2
+        self.__logInInputs = [None]*4
         #username row
         self.__logInInputs[0] = tk.Entry(inputFrameU)
         usernameText = tk.Label(textFrameU,text="Username:")
@@ -334,14 +336,19 @@ class GUI(UI):
         logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
         signUpFrame = tk.Frame(self.__accountFrame)
         signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-        logInButton = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
-        signUpButton = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
-        signUpButton.pack(fill=tk.BOTH,expand=True)
-        logInButton.pack(fill=tk.BOTH,expand=True)
+        self.__logInInputs[2] = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
+        self.__logInInputs[3] = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
+        self.__logInInputs[3].pack(fill=tk.BOTH,expand=True)
+        self.__logInInputs[2].pack(fill=tk.BOTH,expand=True)
+        #settings menu underneath
         settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
         settingsMenu.pack()
         settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
         settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.02))
+        signOutFrame = tk.Frame(self.__settingsWindow)
+        signOutFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.75),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
+        signOutButton = tk.Button(signOutFrame, text="Sign Out", command=self.__attemptSignOut)
+        signOutButton.pack(expand=True,fill=tk.BOTH)
         quitFrame = tk.Frame(self.__settingsWindow)
         quitFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.85),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
         quitButton = tk.Button(quitFrame, text="Close", command=self.__closeSettings)
@@ -354,21 +361,43 @@ class GUI(UI):
             self.__logInMessage = tk.Label(self.__settingsWindow)
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
+    def __updateLogInInputs(self):
+        self.__logInInputs[2].pack_forget()
+        self.__logInInputs[3].config(text="Update Password", command=self.__updatePW)
+    
+    def __updatePW(self):
+        self.__dataBaseManager.updatePassword(*[a.get() for a in self.__logInInputs[:2]])
+
     def __attemptLogIn(self):
-        successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs])
+        successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs[:2]])
         if successfulLogIn:
+            print("Logged in")
             self.__settingsManager.updateAccount(*self.__dataBaseManager.getAccountDetails())
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            self.__accountFrame.pack_forget()
+            #self.__accountFrame.pack_forget()
+            self.__updateLogInInputs()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
     
     def __attemptSignUp(self):
         successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs])
         if successfulSignUp:
+            print("Successfully signed up")
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
             self.__accountFrame.pack_forget()
+            self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
+
+    def __attemptSignOut(self):
+        if self.__dataBaseManager.checkLoggedIn():
+            self.__settingsManager.updateAccount(None,None) #signs out in the settings
+            self.__dataBaseManager.signOut()
+            #put the account login back in place
+            self.__closeSettings()
+            self.__openSettingsWindow()
+            print("Signed Out")
+        else:
+            print("You are already signed out")
 
     def __closeSettings(self):
         self.__settingsWindow.destroy()

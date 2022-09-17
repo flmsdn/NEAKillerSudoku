@@ -32,12 +32,12 @@ class SettingsManager():
 
     def getAccount(self):
         return (self.__config["AccountName"],self.__config["Hash"])
-    
+
     def updateAccount(self,username,hash):
         self.__config["AccountName"] = username
         self.__config["Hash"] = hash
         self.saveSettings()
-        
+
     def saveSettings(self):
         with open(self.__path,"w") as saveFile:
             saveFile.write(json.dumps(self.__config,separators=(",",":")))

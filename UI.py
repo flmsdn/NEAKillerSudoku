@@ -356,25 +356,26 @@ class GUI(UI):
         #this needs to be last for layering
         if self.__dataBaseManager.checkLoggedIn():
             self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
-            self.__accountFrame.pack_forget()
+            self.__updateLogInInputs()
         else:
             self.__logInMessage = tk.Label(self.__settingsWindow)
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
     def __updateLogInInputs(self):
-        self.__logInInputs[2].pack_forget()
-        self.__logInInputs[3].config(text="Update Password", command=self.__updatePW)
+        self.__logInInputs[3].pack_forget()
+        self.__logInInputs[2].config(text="Update Password", command=self.__updatePW)
     
     def __updatePW(self):
-        self.__dataBaseManager.updatePassword(*[a.get() for a in self.__logInInputs[:2]])
+        if self.__dataBaseManager.updatePassword(*[a.get() for a in self.__logInInputs[:2]]):
+            for a in self.__logInInputs[:2]: a.delete(0,tk.END)
 
     def __attemptLogIn(self):
         successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs[:2]])
         if successfulLogIn:
             print("Logged in")
+            for a in self.__logInInputs[:2]: a.delete(0,tk.END)
             self.__settingsManager.updateAccount(*self.__dataBaseManager.getAccountDetails())
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            #self.__accountFrame.pack_forget()
             self.__updateLogInInputs()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
@@ -383,8 +384,9 @@ class GUI(UI):
         successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs])
         if successfulSignUp:
             print("Successfully signed up")
+            for a in self.__logInInputs[:2]: a.delete(0,tk.END)
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            self.__accountFrame.pack_forget()
+            self.__updateLogInInputs()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
 

@@ -94,6 +94,19 @@ class DBManager():
             return True
         return False
 
+    def addGame(self,win,time = 0):
+        if win and time>0 and self.__loggedInAccount: #only use stats if it is a win (we assume 0 seconds isn't possible)
+            #get the current account stats
+            statsQuery = """SELECT solvedGames, solveTime FROM accounts WHERE name='"""+self.__loggedInAccount+"'"
+            res = self.__cur.execute(statsQuery)
+            solvedGames, solveTime = res.fetchall()[0]
+            solveTime *= solvedGames
+            solvedGames += 1
+            solveTime = (solveTime + time)/solvedGames #calculate new solvedGames and solveTime
+            passwordUpdate = f"UPDATE accounts SET solvedGames = {solvedGames}, solveTime = {solveTime} WHERE name = '{self.__loggedInAccount}'"
+            self.__cur.execute(passwordUpdate)
+            self.__connection.commit()
+
 if __name__=="__main__":
     dbm = DBManager()
     dbm.initialiseConnection()

@@ -1,4 +1,5 @@
 from collections import Counter
+from time import time
 from itertools import product
 import os, sys
 import json
@@ -16,6 +17,8 @@ class Game():
         self.__gen = Generator()
         self.__pencilMarkings = [[None for _ in range(9)] for _ in range(9)]
         self.__writeMode = 0 #0 is pen, 1 is pencil
+        self.__time = 0
+        self.__openTime = None
 
     #returns the current game file name
     def getFile(self):
@@ -82,6 +85,8 @@ class Game():
         self.__gameType = gameType
         self.__errors = 0
         self.__fixedCells = []
+        self.__time = 0
+        self.__openTime = time()
         if self.__gameType==0:
             self.__grid = self.__gen.genGrid(difficulty)
         elif self.__gameType==1:
@@ -104,6 +109,7 @@ class Game():
         gameObject["markings"] = self.__pencilMarkings
         gameObject["fixedCells"] = self.__fixedCells
         gameObject["errors"] = errors
+        gameObject["time"] = self.getTime()
         if self.__gameType==1:
             gameObject["cages"] = self.__gen.getCageList(self.__cages)
         saveFile = open(sys.path[0]+filePath,"w")
@@ -133,6 +139,11 @@ class Game():
         else:
             self.__getFixedCells()
             self.saveGame(file)
+        if "time" in gameObject:
+            self.__time = gameObject["time"]
+        else:
+            self.__time = 0
+        self.__openTime = time() #get start time
 
     def deleteGame(self,file=None):
         if not file:
@@ -208,6 +219,10 @@ class Game():
             grid = self.__grid
         return self.__gen.checkComplete(grid)
 
+    def getTime(self):
+        print(self.__time,self.__openTime)
+        return self.__time + time()-self.__openTime
+        
 if __name__ == "__main__":
     g = Game()
     g.deleteGame("Game1.json")

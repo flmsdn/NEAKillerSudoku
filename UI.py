@@ -527,6 +527,8 @@ class GUI(UI):
                         self.playSound(2)
                 if self.Game.checkFull():
                     if self.Game.checkComplete():
+                        timeTaken = self.Game.getTime() #get time taken to add to the account statistics
+                        self.__dataBaseManager.addGame(True,timeTaken)
                         self.__GUIGame.endGame()
                         self.playSound(1)
                 self.display()

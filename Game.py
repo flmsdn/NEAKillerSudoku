@@ -220,7 +220,6 @@ class Game():
         return self.__gen.checkComplete(grid)
 
     def getTime(self):
-        print(self.__time,self.__openTime)
         return self.__time + time()-self.__openTime
         
 if __name__ == "__main__":

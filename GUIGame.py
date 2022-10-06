@@ -29,7 +29,7 @@ class GUIGame():
         self.__writeMode = "Pencil"
         self.errorCrosses = None
         self.loadedImages = []
-        imgPath = sys.path[0]+r"\Resources"
+        imgPath = sys.path[0]+r"\Resources\\Images"
         imageURLs = [r"\Undo.png",r"\Redo.png",r"\EmptyCross.png",r"\ErrorCross.png"]
         for url in imageURLs:
             self.loadedImages.append(Image.open(imgPath+url))

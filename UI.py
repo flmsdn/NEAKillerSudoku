@@ -37,7 +37,7 @@ class UI():
         self._gameOver = False
         self._actionStack = []
         self._redoStack = []
-        self.Game = Game()
+        self._Game = Game()
 
     #loop the game playing
     def run(self):
@@ -46,8 +46,8 @@ class UI():
     
     #control a move being played
     def playMove(self,x,y,val):
-        action = Action(x,y,self.Game.getCell(x-1,y-1),val)
-        self.Game.updateCell(x-1,y-1,val)
+        action = Action(x,y,self._Game.getCell(x-1,y-1),val)
+        self._Game.updateCell(x-1,y-1,val)
         self._actionStack.append(action)
         self._redoStack = []
 
@@ -56,7 +56,7 @@ class UI():
         if not self._actionStack: return False
         action = self._actionStack.pop()
         self._redoStack.append(action)
-        self.Game.updateCell(action.x-1,action.y-1,action.before)
+        self._Game.updateCell(action.x-1,action.y-1,action.before)
         return True
 
     #redo move
@@ -64,7 +64,7 @@ class UI():
         if not self._redoStack: return False
         action = self._redoStack.pop()
         self._actionStack.append(action)
-        self.Game.updateCell(action.x-1,action.y-1,action.after)
+        self._Game.updateCell(action.x-1,action.y-1,action.after)
         return True
     
     #save the current game to a game file
@@ -74,7 +74,7 @@ class UI():
             fileName+=".json"
         elif len(fileName)<5:
             fileName+=".json"
-        self.Game.saveGame(fileName,errors)
+        self._Game.saveGame(fileName,errors)
 
     #load a game from a game file
     def load(self, fileName):
@@ -82,7 +82,7 @@ class UI():
             fileName+=".json"
         elif len(fileName)<5:
             fileName+=".json"
-        self.Game.loadGame(fileName)
+        self._Game.loadGame(fileName)
 
     #play the game - the main game loop
     def play(self):
@@ -121,12 +121,12 @@ class Terminal(UI):
         super().load(fileName)
 
     def gridComplete(self):
-        if self.Game.checkComplete():
+        if self._Game.checkComplete():
             print("Well done! Game complete")
-            if self.Game.getFile:
+            if self._Game.getFile:
                 prompt = input("Would you like to delete your game file? (y/n)")
                 if prompt.lower() !=  "n":
-                    self.Game.deleteGame()
+                    self._Game.deleteGame()
         else:
             print("Incorrect")
         playAgain = input("\nPlay Again? (y/n): ").lower()
@@ -145,7 +145,7 @@ class Terminal(UI):
                 if not 0<diff<8: raise ValueError
             except:
                 diff = 2
-            self.Game.newGame(diff,0)
+            self._Game.newGame(diff,0)
 
         def validInp(text, val):
             value = input(text)
@@ -160,13 +160,13 @@ class Terminal(UI):
         
         while True:
             self.display()
-            if self.Game.checkFull():
+            if self._Game.checkFull():
                 self.gridComplete()
                 break
             while True:
                 try:
                     x,y,val = validInp("Col to input (x coordinate): ",False), validInp("Row to input (y coordinate): ",False), validInp("Value: ",True)
-                    if self.Game.checkCell(x-1,y-1):
+                    if self._Game.checkCell(x-1,y-1):
                         break
                     else:
                         raise ValueError
@@ -199,7 +199,7 @@ class Terminal(UI):
                 except Solve:
                     prompt = input("Are you sure you want to solve the grid? (y/n)")
                     if prompt.lower()=="y":
-                        self.Game.solve()
+                        self._Game.solve()
                         self.display()
                         self.gridComplete()
                         return
@@ -209,14 +209,14 @@ class Terminal(UI):
             self.playMove(x,y,val)
 
     def display(self):
-        if self.Game.getType() == 0:
-            grid = self.Game.getGrid()
+        if self._Game.getType() == 0:
+            grid = self._Game.getGrid()
             printedGrid="  123 456 789\n"
             for row in range(9):
                 printedGrid+=str(row+1)+" "
                 for col in range(9):
                     if grid[row][col]!=0:
-                        if self.Game.checkCell(col,row):
+                        if self._Game.checkCell(col,row):
                             printedGrid+=str(grid[row][col])
                         else:
                             printedGrid+=Colour.BOLD+str(grid[row][col])+Colour.ENDC
@@ -294,7 +294,7 @@ class GUI(UI):
 
     def playMove(self, x, y, val):
         super().playMove(x, y, val)
-        self.__errorCells = self.Game.getErrorCells()
+        self.__errorCells = self._Game.getErrorCells()
 
     def __openSettingsWindow(self):
         if self.__GUIGame.gameWindow!=None: #make sure game is not open at same time as settings window
@@ -340,11 +340,19 @@ class GUI(UI):
         self.__logInInputs[3] = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
         self.__logInInputs[3].pack(fill=tk.BOTH,expand=True)
         self.__logInInputs[2].pack(fill=tk.BOTH,expand=True)
+        #account stats
+        self.__statsFrame = tk.Frame(self.__settingsWindow)
+        if self.__dataBaseManager.checkLoggedIn():
+            #only create the account stats if you are logged in
+            self.__statsFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.24),width=round(dims[0]*0.1),height=frameHeight)
+            print("Should display stats")
+            statsLabel = tk.Label(self.__statsFrame, text="ASD")
+            statsLabel.pack(expand=True, fill=tk.BOTH)
         #settings menu underneath
         settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
         settingsMenu.pack()
         settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
-        settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.02))
+        settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.03))
         signOutFrame = tk.Frame(self.__settingsWindow)
         signOutFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.75),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
         signOutButton = tk.Button(signOutFrame, text="Sign Out", command=self.__attemptSignOut)
@@ -417,7 +425,7 @@ class GUI(UI):
 
     def toggleWriteButton(self):
         self.__GUIGame.updateWriteMode()
-        self.Game.toggleWrite()
+        self._Game.toggleWrite()
 
     def closeMenu(self):
         pass
@@ -441,11 +449,11 @@ class GUI(UI):
         self.loadButton()
     
     def toggleWrite(self,event):
-        self.Game.toggleWrite()
+        self._Game.toggleWrite()
 
     def playRandom(self):
-        self.Game.newGame(self.__difficultySlider.get())
-        self.__errorCells = self.Game.getErrorCells()
+        self._Game.newGame(self.__difficultySlider.get())
+        self.__errorCells = self._Game.getErrorCells()
         self.__errors = 0
         self.__gameScreen()
     
@@ -456,7 +464,7 @@ class GUI(UI):
     def undoButton(self):
         if self.__GUIGame.gameComplete(): return
         if super().undo():
-            self.__errorCells = self.Game.getErrorCells()
+            self.__errorCells = self._Game.getErrorCells()
             self.display()
 
     def redoButton(self):
@@ -464,7 +472,7 @@ class GUI(UI):
             self.display()
 
     def solveButton(self):
-        self.Game.solve()
+        self._Game.solve()
         self.__GUIGame.endGame()
         self.display()
         
@@ -472,15 +480,15 @@ class GUI(UI):
         if play:
             value=self.__gameOption.get()
             super().load(value)
-            self.__errorCells = self.Game.getErrorCells()
-            self.__errors = self.Game.getErrors()
+            self.__errorCells = self._Game.getErrorCells()
+            self.__errors = self._Game.getErrors()
             return
         fileName = self.__GUIGame.loadPrompt()
         if fileName:
             super().load(fileName)
             self.__GUIGame.resetGame()
-            self.__errorCells = self.Game.getErrorCells()
-            self.__errors = self.Game.getErrors()
+            self.__errorCells = self._Game.getErrorCells()
+            self.__errors = self._Game.getErrors()
             self.display()
 
     def saveButton(self):
@@ -509,14 +517,14 @@ class GUI(UI):
         if self.__GUIGame.gameComplete(): return
         if event.keycode==8:
             cell = self.__GUIGame.getSelected()
-            if self.Game.checkCell(cell[0],cell[1]):
+            if self._Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,0)
                 self.display()
         err = self.__errorCells
         if 48<event.keycode<58:
             value = event.keycode-48
             cell = self.__GUIGame.getSelected()
-            if self.Game.checkCell(cell[0],cell[1]):
+            if self._Game.checkCell(cell[0],cell[1]):
                 self.playMove(cell[0]+1,cell[1]+1,value)
                 #play sound
                 self.playSound(0)
@@ -525,9 +533,9 @@ class GUI(UI):
                     if self.__errors>2:
                         self.__GUIGame.gameOver()
                         self.playSound(2)
-                if self.Game.checkFull():
-                    if self.Game.checkComplete():
-                        timeTaken = self.Game.getTime() #get time taken to add to the account statistics
+                if self._Game.checkFull():
+                    if self._Game.checkComplete():
+                        timeTaken = self._Game.getTime() #get time taken to add to the account statistics
                         self.__dataBaseManager.addGame(True,timeTaken)
                         self.__GUIGame.endGame()
                         self.playSound(1)
@@ -538,10 +546,10 @@ class GUI(UI):
         self.__root.mainloop()
 
     def display(self):
-        if self.Game.getType()==0:
-            self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings())
-        elif self.Game.getType()==1:
-            self.__GUIGame.updateGrid(self.Game.getGrid(),self.Game.fixedCells(),self.__errorCells,self.__errors,self.Game.getPencilMarkings(),self.Game.getCages(),self.Game.getCagesDict())
+        if self._Game.getType()==0:
+            self.__GUIGame.updateGrid(self._Game.getGrid(),self._Game.fixedCells(),self.__errorCells,self.__errors,self._Game.getPencilMarkings())
+        elif self._Game.getType()==1:
+            self.__GUIGame.updateGrid(self._Game.getGrid(),self._Game.fixedCells(),self.__errorCells,self.__errors,self._Game.getPencilMarkings(),self._Game.getCages(),self._Game.getCagesDict())
     
     def gameOver(self):
         self.gameOver = True

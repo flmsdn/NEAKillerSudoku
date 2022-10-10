@@ -1,5 +1,6 @@
 import os, sys
 import tkinter as tk
+import tkinter.font
 from Database import DBManager
 from Settings import SettingsManager
 from Game import Game
@@ -45,14 +46,14 @@ class UI():
             self.play()
     
     #control a move being played
-    def playMove(self,x,y,val):
+    def _playMove(self,x,y,val):
         action = Action(x,y,self._Game.getCell(x-1,y-1),val)
         self._Game.updateCell(x-1,y-1,val)
         self._actionStack.append(action)
         self._redoStack = []
 
     #undo move
-    def undo(self):
+    def _undo(self):
         if not self._actionStack: return False
         action = self._actionStack.pop()
         self._redoStack.append(action)
@@ -60,7 +61,7 @@ class UI():
         return True
 
     #redo move
-    def redo(self):
+    def _redo(self):
         if not self._redoStack: return False
         action = self._redoStack.pop()
         self._actionStack.append(action)
@@ -68,7 +69,7 @@ class UI():
         return True
     
     #save the current game to a game file
-    def save(self,fileName,errors=0):
+    def _save(self,fileName,errors=0):
         if not fileName: return
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
@@ -77,7 +78,7 @@ class UI():
         self._Game.saveGame(fileName,errors)
 
     #load a game from a game file
-    def load(self, fileName):
+    def _load(self, fileName):
         if len(fileName)>4 and fileName[-5:]!=".json":
             fileName+=".json"
         elif len(fileName)<5:
@@ -107,20 +108,20 @@ class Terminal(UI):
         input()
         super().run()
 
-    def save(self, fileName=None):
+    def _save(self, fileName=None):
         if fileName is None:
             fileName = input("Enter a name to save the file as (leave blank to not save):")
-        super().save(fileName)
+        super()._save(fileName)
         print("Saved\n")
 
-    def load(self,fileName=None):
+    def _load(self,fileName=None):
         if fileName is None:
             games = os.listdir(sys.path[0]+"\\LocalGames")
             print("   ".join(games))
             fileName = input("Choose a file to load: ")
-        super().load(fileName)
+        super()._load(fileName)
 
-    def gridComplete(self):
+    def __gridComplete(self):
         if self._Game.checkComplete():
             print("Well done! Game complete")
             if self._Game.getFile:
@@ -137,7 +138,7 @@ class Terminal(UI):
         i = input("Would you like to load a game or play a new game? (1/2)")
         if i=="1":
             #load game
-            self.load()
+            self._load()
         elif i=="2":
             #generate new game
             try:
@@ -161,7 +162,7 @@ class Terminal(UI):
         while True:
             self.display()
             if self._Game.checkFull():
-                self.gridComplete()
+                self.__gridComplete()
                 break
             while True:
                 try:
@@ -173,7 +174,7 @@ class Terminal(UI):
                 except GameFinish:
                     prompt = input("Do you want to save your game first? (y/n)")
                     if prompt.lower()=="y":
-                        self.save()
+                        self._save()
                     self._gameOver = True
                     print("Game Terminated")
                     return
@@ -190,23 +191,23 @@ class Terminal(UI):
                     else:
                         print("There were no moves to Redo")
                 except Save:
-                    self.save()
+                    self._save()
                 except Load:
                     prompt = input("Do you want to save your game first? (y/n)")
                     if prompt.lower()=="y":
-                        self.save()
-                    self.load()
+                        self._save()
+                    self._load()
                 except Solve:
                     prompt = input("Are you sure you want to solve the grid? (y/n)")
                     if prompt.lower()=="y":
                         self._Game.solve()
                         self.display()
-                        self.gridComplete()
+                        self.__gridComplete()
                         return
                 except:
                     print("Please input a valid number (between 1 and 9 inclusive)\n")
             print("\n")
-            self.playMove(x,y,val)
+            self._playMove(x,y,val)
 
     def display(self):
         if self._Game.getType() == 0:
@@ -234,10 +235,11 @@ class GUI(UI):
     def __init__(self, file=None):
         super().__init__(file)
         self.__root = None
-        self.__GUIGame = GUIGame()
         self.__settingsWindow = None
         self.__dataBaseManager = DBManager()
         self.__settingsManager = SettingsManager()
+        self.__theme = self.__settingsManager.getTheme(self.__settingsManager.getConfigTheme())
+        self.__GUIGame = GUIGame(self.__theme)
         accountDetails = self.__settingsManager.getAccount()
         if accountDetails[0]!=None:
             self.__dataBaseManager.checkAccountLogin(*accountDetails)
@@ -252,9 +254,18 @@ class GUI(UI):
 
     def __startMenu(self):
         self.__root = tk.Tk()
+        self.__font = tkinter.font.nametofont("TkDefaultFont")
+        self.__font.configure(family="Verdana", size=14, weight=tkinter.font.NORMAL)
         self.__root.title("Main Menu")
         self.__root.state("zoomed")
+        bgCol = self.__GUIGame.rgbToHex(self.__theme["background"])
+        txtCol = self.__GUIGame.rgbToHex(self.__theme["line"])
+        self.__root.configure(bg=bgCol)
         self.__dim = [self.__root.winfo_screenwidth(),self.__root.winfo_screenheight()]
+        titleFrame = tk.Frame(self.__root, bg=bgCol)
+        titleFrame.place(x=round(self.__dim[0]*0.45),y=round(self.__dim[1]*0.1),width=round(self.__dim[0]*0.1))
+        titleText = tk.Label(titleFrame, text="Sudoku",fg=txtCol, bg=bgCol, font=("Sitka Text",26,"bold"), justify=tk.CENTER)
+        titleText.pack(expand=True,fill=tk.X)
         buttonWidth = round(self.__dim[0]*0.1)
         buttonHeight = round(self.__dim[0]*0.02)
         offsetHoriz = round(self.__dim[0]*0.01)
@@ -262,38 +273,40 @@ class GUI(UI):
         #play
         playFrame = tk.Frame(self.__root)
         playFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=offsetVert,width=buttonWidth,height=buttonHeight)
-        playButton = tk.Button(playFrame,text="Play", command=self.playRandom)
+        playButton = tk.Button(playFrame,text="Play", command=self.playRandom,fg=txtCol, bg=bgCol)
         playButton.pack(expand=True,fill=tk.BOTH)
         #load
         loadFrame = tk.Frame(self.__root)
         loadFrame.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert,width=buttonWidth,height=buttonHeight)
-        loadButton = tk.Button(loadFrame,text="Load", command=self.playLoad)
+        loadButton = tk.Button(loadFrame,text="Load", command=self.playLoad,fg=txtCol, bg=bgCol)
         loadButton.pack(expand=True,fill=tk.BOTH)
         games = os.listdir(sys.path[0]+"\\LocalGames")
         self.__gameOption = tk.StringVar()
         self.__gameOption.set(games[0])
         optionDropDown = tk.OptionMenu(self.__root,self.__gameOption,*games)
+        optionDropDown.config(bg=bgCol,fg=txtCol)
+        optionDropDown["menu"].config(bg=bgCol,fg=txtCol)
         optionDropDown.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert+round(self.__dim[1]*0.05))
         #quit
         quitFrame = tk.Frame(self.__root)
         quitFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.92)-buttonHeight,width=buttonWidth,height=buttonHeight)
-        quitButton = tk.Button(quitFrame,text="Quit", command=self.gameOver)
+        quitButton = tk.Button(quitFrame,text="Quit", command=self.gameOver,fg=txtCol, bg=bgCol)
         quitButton.pack(expand=True,fill=tk.BOTH)
         #settings
         settingsFrame = tk.Frame(self.__root)
         settingsFrame.place(x=round(self.__dim[0]*0.95)-buttonWidth,y=round(self.__dim[1]*0.08),width=buttonWidth,height=buttonHeight)
-        settingsButton = tk.Button(settingsFrame,text="Settings",command=self.__openSettingsWindow)
+        settingsButton = tk.Button(settingsFrame,text="Settings",command=self.__openSettingsWindow,fg=txtCol, bg=bgCol)
         settingsButton.pack(expand=True,fill=tk.BOTH)
         #difficulty slider
-        sliderFrame = tk.Frame(self.__root)
-        sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*2)
-        text = tk.Label(sliderFrame, text="Difficulty: ")
+        sliderFrame = tk.Frame(self.__root, bg=bgCol)
+        sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*4)
+        text = tk.Label(sliderFrame, text="Difficulty: ",fg=txtCol, bg=bgCol)
         text.pack()
-        self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL)
+        self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL,fg=txtCol, bg=bgCol,relief="flat",highlightthickness=0)
         self.__difficultySlider.pack(expand=True,fill=tk.X)
 
-    def playMove(self, x, y, val):
-        super().playMove(x, y, val)
+    def _playMove(self, x, y, val):
+        super()._playMove(x, y, val)
         self.__errorCells = self._Game.getErrorCells()
 
     def __openSettingsWindow(self):
@@ -306,6 +319,7 @@ class GUI(UI):
         self.__settingsWindow = tk.Toplevel()
         self.__settingsWindow.title("Settings")
         self.__settingsWindow.state("zoomed")
+        self.__settingsWindow.configure(bg=self.__GUIGame.rgbToHex(self.__theme["background"]))
         dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
         self.__settingsWindow.geometry("%dx%d+0+0" % dims)
         frameHeight = round(dims[1]*0.03)
@@ -336,7 +350,7 @@ class GUI(UI):
         logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
         signUpFrame = tk.Frame(self.__accountFrame)
         signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-        self.__logInInputs[2] = tk.Button(logInFrame,text="Log In",command=self.__attemptLogIn)
+        self.__logInInputs[2] = tk.Button(logInFrame,text="Log In",command=self.__attemptLogin)
         self.__logInInputs[3] = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
         self.__logInInputs[3].pack(fill=tk.BOTH,expand=True)
         self.__logInInputs[2].pack(fill=tk.BOTH,expand=True)
@@ -344,15 +358,15 @@ class GUI(UI):
         self.__statsFrame = tk.Frame(self.__settingsWindow)
         if self.__dataBaseManager.checkLoggedIn():
             #only create the account stats if you are logged in
-            self.__statsFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.24),width=round(dims[0]*0.1),height=frameHeight)
-            print("Should display stats")
-            statsLabel = tk.Label(self.__statsFrame, text="ASD")
+            accStats = self.__dataBaseManager.getAccountStats()
+            self.__statsFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.23),width=round(dims[0]*0.2),height=frameHeight)
+            statsLabel = tk.Label(self.__statsFrame, text=f"Solved games: {accStats[0]}, Average solve time: {accStats[1]:.1f}")
             statsLabel.pack(expand=True, fill=tk.BOTH)
         #settings menu underneath
-        settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.77))
-        settingsMenu.pack()
-        settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER)
-        settingsText.place(x=round(dims[0]*0.45),width=round(dims[0]*0.1),y=round(dims[1]*0.03))
+        settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.70),bd=1, relief="groove")
+        settingsMenu.place(x=0,y=round(dims[1]*0.28),width=dims[0],height=round(dims[1]*0.72))
+        settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER, font=("Helvetica",15,"bold"), width=round(dims[0]*0.2))
+        settingsText.pack(fill=tk.X)
         signOutFrame = tk.Frame(self.__settingsWindow)
         signOutFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.75),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
         signOutButton = tk.Button(signOutFrame, text="Sign Out", command=self.__attemptSignOut)
@@ -364,12 +378,13 @@ class GUI(UI):
         #this needs to be last for layering
         if self.__dataBaseManager.checkLoggedIn():
             self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
-            self.__updateLogInInputs()
+            self.__updateLoginInputs()
+            self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
         else:
             self.__logInMessage = tk.Label(self.__settingsWindow)
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
-    def __updateLogInInputs(self):
+    def __updateLoginInputs(self):
         self.__logInInputs[3].pack_forget()
         self.__logInInputs[2].config(text="Update Password", command=self.__updatePW)
     
@@ -377,14 +392,15 @@ class GUI(UI):
         if self.__dataBaseManager.updatePassword(*[a.get() for a in self.__logInInputs[:2]]):
             for a in self.__logInInputs[:2]: a.delete(0,tk.END)
 
-    def __attemptLogIn(self):
-        successfulLogIn = self.__dataBaseManager.attemptLogIn(*[a.get() for a in self.__logInInputs[:2]])
-        if successfulLogIn:
+    def __attemptLogin(self):
+        successfulLogin = self.__dataBaseManager.attemptLogin(*[a.get() for a in self.__logInInputs[:2]])
+        if successfulLogin:
             print("Logged in")
             for a in self.__logInInputs[:2]: a.delete(0,tk.END)
             self.__settingsManager.updateAccount(*self.__dataBaseManager.getAccountDetails())
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            self.__updateLogInInputs()
+            self.__closeSettings()
+            self.__openSettingsWindow()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
     
@@ -394,7 +410,7 @@ class GUI(UI):
             print("Successfully signed up")
             for a in self.__logInInputs[:2]: a.delete(0,tk.END)
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
-            self.__updateLogInInputs()
+            self.__updateLoginInputs()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
 
@@ -463,12 +479,12 @@ class GUI(UI):
 
     def undoButton(self):
         if self.__GUIGame.gameComplete(): return
-        if super().undo():
+        if super()._undo():
             self.__errorCells = self._Game.getErrorCells()
             self.display()
 
     def redoButton(self):
-        if super().redo():
+        if super()._redo():
             self.display()
 
     def solveButton(self):
@@ -479,13 +495,13 @@ class GUI(UI):
     def loadButton(self, play=False):
         if play:
             value=self.__gameOption.get()
-            super().load(value)
+            super()._load(value)
             self.__errorCells = self._Game.getErrorCells()
             self.__errors = self._Game.getErrors()
             return
         fileName = self.__GUIGame.loadPrompt()
         if fileName:
-            super().load(fileName)
+            super()._load(fileName)
             self.__GUIGame.resetGame()
             self.__errorCells = self._Game.getErrorCells()
             self.__errors = self._Game.getErrors()
@@ -493,7 +509,7 @@ class GUI(UI):
 
     def saveButton(self):
         fileName = self.__GUIGame.savePrompt()
-        super().save(fileName,self.__errors)
+        super()._save(fileName,self.__errors)
 
     def clickCanvas(self,event):
         self.__GUIGame.cellClick(event)
@@ -518,14 +534,14 @@ class GUI(UI):
         if event.keycode==8:
             cell = self.__GUIGame.getSelected()
             if self._Game.checkCell(cell[0],cell[1]):
-                self.playMove(cell[0]+1,cell[1]+1,0)
+                self._playMove(cell[0]+1,cell[1]+1,0)
                 self.display()
         err = self.__errorCells
         if 48<event.keycode<58:
             value = event.keycode-48
             cell = self.__GUIGame.getSelected()
             if self._Game.checkCell(cell[0],cell[1]):
-                self.playMove(cell[0]+1,cell[1]+1,value)
+                self._playMove(cell[0]+1,cell[1]+1,value)
                 #play sound
                 self.playSound(0)
                 if self.__errorCells!=err and self.__errorCells:
@@ -557,4 +573,13 @@ class GUI(UI):
         self.__root = None
 
 if __name__ == "__main__":
-    pass
+    r = tk.Tk()
+    frame = tk.Frame(r)
+    f = [a for a in list(tkinter.font.families()) if not "Microsoft" in a ][100:]
+    for i in f:
+        tk.Label(frame,text=i,font=(i,10)).pack()
+    s = tk.Scrollbar(frame,orient="vertical")
+    frame.pack()
+    s.pack(side=tk.LEFT)
+    #s.config(frame.yview)
+    r.mainloop()

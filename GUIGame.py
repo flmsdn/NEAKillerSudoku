@@ -1,4 +1,3 @@
-from distutils.log import error
 from itertools import product
 import tkinter as tk
 import numpy as np
@@ -15,14 +14,17 @@ class GUIGame():
     GRID_NONET = 4
     GRID_INNER = 2
 
-    def __init__(self):
-        self.__errorChecking = True
+    def __init__(self,theme=None):
         self.gameWindow = None
         self.gameGrid = None
+        self.__errorChecking = True
         self.__dim = [None,None]
         self.__width = 0
         #all colours are stored as RGB but must be converted to hexadecimal for Tkinter
-        self.__colours = {"line": (0,0,0), "background": (255,255,255), "canvas": (255,255,255), "selected": (180,180,180), "selectedRC": (220,220,220),"errorCell": (255,180,180),"error": (255,0,0)}
+        if theme==None:
+            self.__colours = {"line": (0,0,0), "background": (255,255,255), "canvas": (255,255,255), "selected": (180,180,180), "selectedRC": (220,220,220),"errorCell": (255,180,180),"error": (255,0,0)}
+        else:
+            self.updateTheme(theme)
         self.__selectedCell = None
         self.__gameComplete = False
         self.__gameOver = False
@@ -34,9 +36,13 @@ class GUIGame():
         for url in imageURLs:
             self.loadedImages.append(Image.open(imgPath+url))
     
+    def updateTheme(self,theme):
+        print("loadedTheme")
+        self.__colours = theme
+
     # operations on colours
     #https://stackoverflow.com/questions/3380726/converting-an-rgb-color-tuple-to-a-hexidecimal-string
-    def __rgbToHex(self,rgb):
+    def rgbToHex(self,rgb):
         return '#%02x%02x%02x' % rgb
     
     def __clamp(self,val):
@@ -71,7 +77,7 @@ class GUIGame():
     #open a new game in its own window
     def openWindow(self,saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction,toggleWriteMode):
         self.gameWindow = tk.Toplevel()
-        self.gameWindow.configure(bg=self.__rgbToHex(self.__colours["background"]))
+        self.gameWindow.configure(bg=self.rgbToHex(self.__colours["background"]))
         self.gameWindow.title("Game")
         self.gameWindow.state("zoomed")
         self.gameWindow.resizable(True,True)
@@ -82,7 +88,7 @@ class GUIGame():
         self.__functions = [saveFunction,loadFunction,quitFunction,undoFunction,redoFunction,solveFunction,toggleWriteMode]
         #sudoku grid
         self.__width = round(self.__dim[1]*0.7)
-        self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0)
+        self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0,bg=self.rgbToHex(self.__colours["canvas"]))
         self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
         self.loadSizedWindow()
     
@@ -91,6 +97,9 @@ class GUIGame():
         for widget in self.gameWindow.winfo_children():
             if not type(widget) in preservedWidgets and not widget in self.errorCrosses:
                 widget.destroy()
+        #colours
+        bgCol = self.rgbToHex(self.__colours["background"])
+        txtCol = self.rgbToHex(self.__colours["line"])
         #undo and redo images
         self.__width = round(self.__dim[1]*0.7)
         scale = self.__width/self.gameGrid.winfo_width()
@@ -126,31 +135,32 @@ class GUIGame():
         undoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2) #width and height
         redoButtonFrame = tk.Frame(self.gameWindow)
         redoButtonFrame.place(x=self.__dim[0]/2+self.__width/2-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2)
-        writeModeFrame = tk.Frame(self.gameWindow)
-        writeModeFrame.place(x=self.__dim[0]/2+self.__width/2-imLen-imOffset,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2)
         #buttons
-        self.saveButton = tk.Button(saveButtonFrame,text="Save",command=self.__functions[0])
-        self.loadButton = tk.Button(loadButtonFrame,text="Load",command=self.__functions[1])
-        self.solveButton = tk.Button(solveButtonFrame,text="Solve",command=self.__functions[5])
-        self.quitButton = tk.Button(quitButtonFrame,text="Quit", command=self.__functions[2])
-        self.undoButton = tk.Button(undoButtonFrame,image=self.__undoImg, command=self.__functions[3])
+        self.saveButton = tk.Button(saveButtonFrame,text="Save",command=self.__functions[0],bg=bgCol,fg=txtCol)
+        self.loadButton = tk.Button(loadButtonFrame,text="Load",command=self.__functions[1],bg=bgCol,fg=txtCol)
+        self.solveButton = tk.Button(solveButtonFrame,text="Solve",command=self.__functions[5],bg=bgCol,fg=txtCol)
+        self.quitButton = tk.Button(quitButtonFrame,text="Quit", command=self.__functions[2],bg=bgCol,fg=txtCol)
+        self.undoButton = tk.Button(undoButtonFrame,image=self.__undoImg, command=self.__functions[3],bg=bgCol,fg=txtCol)
         self.undoButton.image = self.__undoImg
-        self.redoButton = tk.Button(redoButtonFrame,image=self.__redoImg, command=self.__functions[4])
+        self.redoButton = tk.Button(redoButtonFrame,image=self.__redoImg, command=self.__functions[4],bg=bgCol,fg=txtCol)
         self.redoButton.image = self.__redoImg
-        self.writeModeButton = tk.Button(writeModeFrame,text=self.__writeMode, command=self.__functions[6])
         self.saveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.loadButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.solveButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.quitButton.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
         self.undoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
         self.redoButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
-        self.writeModeButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH)
+        #write mode button
+        writeModeFrame = tk.Frame(self.gameWindow)
+        self.writeModeButton = tk.Button(writeModeFrame,text=self.__writeMode, command=self.__functions[6],bg=bgCol,fg=txtCol)
+        writeModeFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,anchor=tk.NE)
+        self.writeModeButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH,anchor=tk.NE)
         self.errorCrosses = [None]*3
         errorFrames = [None]*3
         for cross in range(3):
             errorFrames[cross] = tk.Frame(self.gameWindow)
             errorFrames[cross].place(x=self.__dim[0]/2-self.__width/2 + cross*crossLen,y=self.__dim[1]/2+self.__width/2,width=crossLen,height=crossLen)
-            self.errorCrosses[cross] = tk.Label(errorFrames[cross], image = self.__emptyCross, background=self.__rgbToHex(self.__colours["background"]))
+            self.errorCrosses[cross] = tk.Label(errorFrames[cross], image = self.__emptyCross, background=self.rgbToHex(self.__colours["background"]))
             self.errorCrosses[cross].configure(image = self.__errorCross)
             self.errorCrosses[cross].image = self.__errorCross
             self.errorCrosses[cross].configure(image = self.__emptyCross)
@@ -249,11 +259,11 @@ class GUIGame():
         colMul = self.__mulC(colDiff,(0.2,0.2,0.2))
         if self.__gameComplete or self.__gameOver:
             fade = (130,130,130)
-            lineCol = self.__rgbToHex(self.__addC(self.__colours["line"],fade))
-            inlineCol = self.__rgbToHex(self.__addC(self.__addC( (128,128,128), colMul),fade))
+            lineCol = self.rgbToHex(self.__addC(self.__colours["line"],fade))
+            inlineCol = self.rgbToHex(self.__addC(self.__addC( (128,128,128), colMul),fade))
         else:
-            lineCol = self.__rgbToHex(self.__colours["line"])
-            inlineCol = self.__rgbToHex(self.__addC( (128,128,128), colMul))
+            lineCol = self.rgbToHex(self.__colours["line"])
+            inlineCol = self.rgbToHex(self.__addC( (128,128,128), colMul))
         oS = self.GRID_OUTLINE//2
         mi, ms, ma, l = oS, self.__width, self.__width-oS, (self.__width-2*oS)/9
         self.gameGrid.delete("all")
@@ -262,19 +272,19 @@ class GUIGame():
         if not self.__selectedCell is None:
             nx, ny = self.__selectedCell[0]//3-1, self.__selectedCell[1]//3-1
             #highlighting row and column
-            self.gameGrid.create_rectangle(0,mi+l*self.__selectedCell[1],ms,mi+l*(self.__selectedCell[1]+1),fill=self.__rgbToHex(self.__colours["selectedRC"]),outline="")
-            self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],0,mi+l*(self.__selectedCell[0]+1),ms,fill=self.__rgbToHex(self.__colours["selectedRC"]),outline="")
-            self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],mi+l*self.__selectedCell[1],mi+l*(self.__selectedCell[0]+1),mi+l*(self.__selectedCell[1]+1),fill=self.__rgbToHex(self.__colours["selected"]),outline="")
+            self.gameGrid.create_rectangle(0,mi+l*self.__selectedCell[1],ms,mi+l*(self.__selectedCell[1]+1),fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
+            self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],0,mi+l*(self.__selectedCell[0]+1),ms,fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
+            self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],mi+l*self.__selectedCell[1],mi+l*(self.__selectedCell[0]+1),mi+l*(self.__selectedCell[1]+1),fill=self.rgbToHex(self.__colours["selected"]),outline="")
         for r,c in product(range(9),range(9)):
             if self.__errorChecking and (c,r) in errorCells:
-                    self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.__rgbToHex(self.__colours["errorCell"]),outline="")
+                    self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.rgbToHex(self.__colours["errorCell"]),outline="")
             if npGrid[r,c]:
                 if self.__errorChecking and (c,r) in errorCells:
-                    self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=self.__rgbToHex(self.__colours["error"]))
+                    self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=self.rgbToHex(self.__colours["error"]))
                 else:
                     if not self.__selectedCell is None:
                         if npGrid[r,c]==npGrid[self.__selectedCell[1],self.__selectedCell[0]] and [c,r]!=self.__selectedCell:
-                            self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.__rgbToHex(self.__colours["selectedRC"]),outline="")
+                            self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
                     self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=lineCol)
             elif type(pencilMarkings)==list:
                 if pencilMarkings[r][c] != None and pencilMarkings[r][c] != []:

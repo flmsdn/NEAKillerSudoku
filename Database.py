@@ -27,7 +27,7 @@ class DBManager():
          solveTime         REAL);"""
         self.__cur.execute(tableCreation)
 
-    def attemptLogIn(self,username,password):
+    def attemptLogin(self,username,password):
         pwHash = self.__hashPassword(password)
         #check if the password hash in the table is in the account
         return self.checkAccountLogin(username,pwHash)
@@ -94,12 +94,16 @@ class DBManager():
             return True
         return False
 
+    def getAccountStats(self):
+        if self.__loggedInAccount:
+            statsQuery = """SELECT solvedGames, solveTime FROM accounts WHERE name='"""+self.__loggedInAccount+"'"
+            res = self.__cur.execute(statsQuery)
+            return res.fetchall()[0]
+        
     def addGame(self,win,time = 0):
         if win and time>0 and self.__loggedInAccount: #only use stats if it is a win (we assume 0 seconds isn't possible)
             #get the current account stats
-            statsQuery = """SELECT solvedGames, solveTime FROM accounts WHERE name='"""+self.__loggedInAccount+"'"
-            res = self.__cur.execute(statsQuery)
-            solvedGames, solveTime = res.fetchall()[0]
+            solvedGames, solveTime = self.getAccountStats()
             solveTime *= solvedGames
             solvedGames += 1
             solveTime = (solveTime + time)/solvedGames #calculate new solvedGames and solveTime

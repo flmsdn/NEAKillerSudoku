@@ -21,7 +21,7 @@ class Generator():
         shapeCfgFile = open(sys.path[0]+r"\Resources\config\shapes.json","r")
         self.__shapeConfig = json.load(shapeCfgFile)
     
-    def check(self,test,array): #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
+    def __check(self,test,array): #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
         return any(np.array_equal(x, test) for x in array)
 
     def checkComplete(self, grid):
@@ -34,11 +34,8 @@ class Generator():
                 return False
         return True
 
-    def coordToInd(self,coord):
+    def __coordToInd(self,coord):
         return coord[0]+coord[1]*9 #counts up with x values
-
-    def indToCoord(self,ind):
-        return [ind%9,ind//9]
 
     def getCageList(self,cages):
         cageList = []
@@ -56,12 +53,12 @@ class Generator():
         cageDict = {}
         for e,cage in enumerate(cages):
             for cell in cage.cells:
-                cInd = self.coordToInd(cell)
+                cInd = self.__coordToInd(cell)
                 cageDict[cInd] = e
         return cageDict
     
     #logic from https://www.101computing.net/sudoku-generator-algorithm/
-    def fillGrid(self,grid):
+    def __fillGrid(self,grid):
         for row, col in itertools.product(range(9),range(9)):
             if grid[row][col]==0:
                 random.shuffle(self.__nums)
@@ -73,14 +70,14 @@ class Generator():
                             if not num in nonet:
                                 grid[row][col] = num
                                 if 0 in grid:
-                                    if self.fillGrid(grid):
+                                    if self.__fillGrid(grid):
                                         return True
                                 else:
                                     return True
                 break
         grid[row][col]=0
     
-    def iterateGrid(self,grid,saveState):
+    def __iterateGrid(self,grid,saveState):
         #iterate over all cells
         for row, col in itertools.product(range(9),range(9)):
             if grid[row][col]==0:
@@ -93,7 +90,7 @@ class Generator():
                             if not num in nonet:
                                 grid[row][col] = num
                                 if 0 in grid:
-                                    if self.iterateGrid(grid,saveState):
+                                    if self.__iterateGrid(grid,saveState):
                                         return True
                                 else:
                                     self.__count+=1
@@ -107,13 +104,13 @@ class Generator():
     def solveGrid(self,grid):
         while True:
             gridTrial = np.copy(grid)
-            self.fillGrid(gridTrial)
+            self.__fillGrid(gridTrial)
             if self.checkComplete(gridTrial):
                 return gridTrial.tolist()
     
     def genGrid(self, difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
-        self.fillGrid(grid) #fill grid in with random values
+        self.__fillGrid(grid) #fill grid in with random values
         #limit difficulty
         if difficulty>7: difficulty=7
         elif difficulty<1: difficulty=1
@@ -126,13 +123,13 @@ class Generator():
             #copy grid so no permanent change are made
             gridCopy = np.copy(grid)
             self.__count=0
-            self.iterateGrid(gridCopy,False)
+            self.__iterateGrid(gridCopy,False)
             if self.__count!=1:
                 grid[r,c]=oldVal
                 difficulty-=1
         return grid.tolist()
     
-    def findShape(self,grid,shape):
+    def __findShape(self,grid,shape):
         usedCoords = []
         #shape coordinates are in the form [y,x]
         #extract all numbers in the shape and the shape coordinates
@@ -153,7 +150,7 @@ class Generator():
                     foundCoord = False
                     checkCoord = [coord[0]+unusedCoords[-1][0],coord[1]+unusedCoords[-1][1]]
                     for i in unusedInd:
-                        if self.check(np.array(checkCoord), numCoords[i]) and not (checkCoord in usedCoords):
+                        if self.__check(np.array(checkCoord), numCoords[i]) and not (checkCoord in usedCoords):
                             foundCoord=True
                             curShape.append(checkCoord)
                             unusedInd.remove(i)
@@ -167,7 +164,7 @@ class Generator():
                     usedCoords = usedCoords + curShape
         return shapes
     
-    def checkForDefiniteCages(self,grid):
+    def __checkForDefiniteCages(self,grid):
         #copy the filled grid
         tempG = np.copy(grid)
         #check for definite 5 cages all the way down to 2
@@ -182,7 +179,7 @@ class Generator():
             indNumbers = numbers[3-i]
             for s in indShapes:
                 for ns in indNumbers:
-                    coordinates = self.findShape(tempG, [ns,s] )
+                    coordinates = self.__findShape(tempG, [ns,s] )
                     if len(coordinates):
                         for cage in coordinates: #remove each found cage
                             #cages are stored with x,y coordinates but here it is easier to find y,x so we have to reverse them
@@ -193,14 +190,14 @@ class Generator():
                             cages.append( [sum(ns)] + cReverse )
         return tempG, cages #return the grid with uncaged cells and the cages
 
-    def fillInFinalCages(self,tempGrid):
+    def __fillInFinalCages(self,tempGrid):
         shapes = self.__shapeConfig["reducedShapes"] #ind 0 is size 2, 1 is size 3... 3 is size 5
         cages = []
         for i in range(4):
             #i 0 is 4, i 3 is 1
             indShapes = shapes[3-i]
             for s in indShapes:
-                coordinates = self.findShape(tempGrid, [range(1,10),s])
+                coordinates = self.__findShape(tempGrid, [range(1,10),s])
                 if len(coordinates):
                     for cage in coordinates:
                         cReverse = []
@@ -212,7 +209,7 @@ class Generator():
                         cages.append( [cSum] + cReverse )
         return tempGrid, cages
     
-    def iterateKillerGrid(self,grid,saveState):
+    def __iterateKillerGrid(self,grid,saveState):
         #iterate over all cells
         for row, col in itertools.product(range(9),range(9)):
             if grid[row][col]==0:
@@ -223,13 +220,13 @@ class Generator():
                             nonetX, nonetY = col//3, row//3
                             nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
                             if not num in nonet:
-                                cInd = self.__cageDict[self.coordToInd([col,row])]
+                                cInd = self.__cageDict[self.__coordToInd([col,row])]
                                 cage = self.__cages[cInd]
                                 vals = [c for c in self.__cellList[cInd] if c >0]
                                 if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
                                     grid[row][col] = num
                                     if 0 in grid:
-                                        if self.iterateKillerGrid(grid,saveState):
+                                        if self.__iterateKillerGrid(grid,saveState):
                                             return True
                                     else:
                                         self.__count+=1
@@ -240,7 +237,7 @@ class Generator():
         if not saveState:
             grid[row, col]=0
 
-    def checkKillerComplete(self, grid):
+    def __checkKillerComplete(self, grid):
         npBoard = np.array(grid) #get a numpy 2D array of the grid
         gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
         gridCols = [npBoard[:,j] for j in range(9)] #get all of the grid columns
@@ -263,20 +260,20 @@ class Generator():
             self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
         while True:
             gridTrial = np.copy(grid)
-            self.fillGrid(gridTrial)
-            if self.checkKillerComplete(gridTrial): #check Killer
+            self.__fillGrid(gridTrial)
+            if self.__checkKillerComplete(gridTrial): #check Killer
                 return gridTrial.tolist()
 
     def genKillerGrid(self,difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
-        self.fillGrid(grid) #fill grid in with random values
+        self.__fillGrid(grid) #fill grid in with random values
         #limit difficulty
         if difficulty>7: difficulty=7
         elif difficulty<1: difficulty=1
-        emptiedGrid, cages = self.checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
+        emptiedGrid, cages = self.__checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
         #now we need to find a way to create cages around remaining cells
         #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
-        emptiedGrid,newCages = self.fillInFinalCages(emptiedGrid)
+        emptiedGrid,newCages = self.__fillInFinalCages(emptiedGrid)
         allCages = cages+newCages
         self.__cages = self.getCages(allCages,grid)
         self.__cageDict = self.getCageDict(self.__cages)
@@ -293,7 +290,7 @@ class Generator():
             #copy grid so no permanent change are made
             gridCopy = np.copy(grid)
             self.__count=0
-            self.iterateKillerGrid(gridCopy,False)
+            self.__iterateKillerGrid(gridCopy,False)
             if self.__count!=1:
                 grid[r,c]=oldVal
                 difficulty-=1

@@ -1,12 +1,13 @@
 import os, sys
 import tkinter as tk
-import tkinter.font
+import tkinter.font, tkinter.messagebox
 from Database import DBManager
 from Settings import SettingsManager
 from Game import Game
 from Colours import Colour
 from GUIGame import GUIGame
 import winsound
+import re
 
 #Events are going to be used with Exception Handling
 class GameFinish(Exception):
@@ -245,11 +246,20 @@ class GUI(UI):
             self.__dataBaseManager.checkAccountLogin(*accountDetails)
         self.__errorCells = set()
         self.__errors = 0
+        self.__themeStrings = []
+        #get all of the theme names as non-camel case strings
+        for themeSt in self.__settingsManager.getThemes():
+            themeMatch = re.match("([a-z]*)([A-Z][a-z]*)?Theme",themeSt)
+            self.__themeStrings.append(" ".join( [s.capitalize() for s in themeMatch.groups() if s!=None] ))
         self.__audioPath = sys.path[0]+"\\Resources\\Sounds\\"
-        self.__audioPreset = "retro"
+        self.__soundPresets = ["Classic","Retro","Bubbly"]
+        self.__audioPreset = self.__settingsManager.getConfigAudio()
         self.__soundsDict = {0:"Write.wav",1: "Win.wav",2: "Gameover.wav"}
+        self.__gameModes = ["Sudoku", "Killer Sudoku"]
+        self.__muted = self.__settingsManager.getMuted()
 
     def playSound(self,id):
+        if self.__muted: return
         winsound.PlaySound(self.__audioPath+self.__audioPreset+self.__soundsDict[id], winsound.SND_ASYNC | winsound.SND_ALIAS)
 
     def __startMenu(self):
@@ -260,7 +270,7 @@ class GUI(UI):
         self.__root.state("zoomed")
         bgCol = self.__GUIGame.rgbToHex(self.__theme["background"])
         txtCol = self.__GUIGame.rgbToHex(self.__theme["line"])
-        self.__root.configure(bg=bgCol)
+        self.__root.configure(bg = bgCol)
         self.__dim = [self.__root.winfo_screenwidth(),self.__root.winfo_screenheight()]
         titleFrame = tk.Frame(self.__root, bg=bgCol)
         titleFrame.place(x=round(self.__dim[0]*0.45),y=round(self.__dim[1]*0.1),width=round(self.__dim[0]*0.1))
@@ -300,6 +310,12 @@ class GUI(UI):
         #difficulty slider
         sliderFrame = tk.Frame(self.__root, bg=bgCol)
         sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*4)
+        self.__selectedGameMode = tk.StringVar()
+        self.__selectedGameMode.set(self.__gameModes[0])
+        gameModeSelect = tk.OptionMenu(sliderFrame, self.__selectedGameMode, *self.__gameModes)
+        gameModeSelect.config(bg=bgCol,fg=txtCol)
+        gameModeSelect["menu"].config(bg=bgCol,fg=txtCol)
+        gameModeSelect.pack()
         text = tk.Label(sliderFrame, text="Difficulty: ",fg=txtCol, bg=bgCol)
         text.pack()
         self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL,fg=txtCol, bg=bgCol,relief="flat",highlightthickness=0)
@@ -323,66 +339,106 @@ class GUI(UI):
         dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
         self.__settingsWindow.geometry("%dx%d+0+0" % dims)
         frameHeight = round(dims[1]*0.03)
+        bgCol = self.__GUIGame.rgbToHex(self.__theme["background"])
+        txtCol = self.__GUIGame.rgbToHex(self.__theme["line"])
         #create the account log in and sign in frame
-        self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23))
+        self.__accountFrame = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.23),bg=bgCol)
         self.__accountFrame.pack()
-        inputFrameU = tk.Frame(self.__accountFrame)
+        inputFrameU = tk.Frame(self.__accountFrame,bg=bgCol)
         inputFrameU.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
-        textFrameU = tk.Frame(self.__accountFrame)
+        textFrameU = tk.Frame(self.__accountFrame,bg=bgCol)
         textFrameU.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10),width=round(dims[0]*0.1),height=frameHeight)
-        inputFrameP = tk.Frame(self.__accountFrame)
+        inputFrameP = tk.Frame(self.__accountFrame,bg=bgCol)
         inputFrameP.place(x=round(dims[0]*0.5),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
-        textFrameP = tk.Frame(self.__accountFrame)
+        textFrameP = tk.Frame(self.__accountFrame,bg=bgCol)
         textFrameP.place(x=round(dims[0]*0.4),y=round(dims[1]*0.10)+frameHeight,width=round(dims[0]*0.1),height=frameHeight)
         self.__logInInputs = [None]*4
         #username row
         self.__logInInputs[0] = tk.Entry(inputFrameU)
-        usernameText = tk.Label(textFrameU,text="Username:")
+        usernameText = tk.Label(textFrameU,text="Username:",bg=bgCol,fg=txtCol)
         usernameText.pack(side=tk.RIGHT,anchor=tk.NE)
         self.__logInInputs[0].pack(side=tk.LEFT,anchor=tk.NW)
         #password
         self.__logInInputs[1] = tk.Entry(inputFrameP,show="*")
-        passwordText = tk.Label(textFrameP,text="Password:")
+        passwordText = tk.Label(textFrameP,text="Password:",bg=bgCol,fg=txtCol)
         passwordText.pack(side=tk.RIGHT,anchor=tk.E)
         self.__logInInputs[1].pack(side=tk.LEFT)
         #buttons
-        logInFrame = tk.Frame(self.__accountFrame)
+        logInFrame = tk.Frame(self.__accountFrame,bg=bgCol)
         logInFrame.place(x=round(dims[0]*0.5),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-        signUpFrame = tk.Frame(self.__accountFrame)
+        signUpFrame = tk.Frame(self.__accountFrame,bg=bgCol)
         signUpFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.20),width=round(dims[0]*0.1),height=frameHeight)
-        self.__logInInputs[2] = tk.Button(logInFrame,text="Log In",command=self.__attemptLogin)
-        self.__logInInputs[3] = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp)
+        self.__logInInputs[2] = tk.Button(logInFrame,text="Log In",command=self.__attemptLogin,bg=bgCol,fg=txtCol)
+        self.__logInInputs[3] = tk.Button(signUpFrame,text="Create Account",command=self.__attemptSignUp,bg=bgCol,fg=txtCol)
         self.__logInInputs[3].pack(fill=tk.BOTH,expand=True)
         self.__logInInputs[2].pack(fill=tk.BOTH,expand=True)
         #account stats
-        self.__statsFrame = tk.Frame(self.__settingsWindow)
+        self.__statsFrame = tk.Frame(self.__settingsWindow,bg=bgCol)
         if self.__dataBaseManager.checkLoggedIn():
             #only create the account stats if you are logged in
             accStats = self.__dataBaseManager.getAccountStats()
-            self.__statsFrame.place(x=round(dims[0]*0.4),y=round(dims[1]*0.23),width=round(dims[0]*0.2),height=frameHeight)
-            statsLabel = tk.Label(self.__statsFrame, text=f"Solved games: {accStats[0]}, Average solve time: {accStats[1]:.1f}")
+            self.__statsFrame.place(x=round(dims[0]*0.3),y=round(dims[1]*0.23),width=round(dims[0]*0.4),height=frameHeight)
+            statsLabel = tk.Label(self.__statsFrame, text=f"Solved games: {accStats[0]}, Average solve time: {accStats[1]:.1f}",bg=bgCol,fg=txtCol)
             statsLabel.pack(expand=True, fill=tk.BOTH)
         #settings menu underneath
-        settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.70),bd=1, relief="groove")
+        settingsMenu = tk.Frame(self.__settingsWindow,width=dims[0],height=round(dims[1]*0.70),bd=1, relief="groove",bg=bgCol)
         settingsMenu.place(x=0,y=round(dims[1]*0.28),width=dims[0],height=round(dims[1]*0.72))
-        settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER, font=("Helvetica",15,"bold"), width=round(dims[0]*0.2))
+        settingsText = tk.Label(settingsMenu,text="Settings",justify=tk.CENTER, font=("Helvetica",15,"bold"), width=round(dims[0]*0.2),bg=bgCol,fg=txtCol)
         settingsText.pack(fill=tk.X)
-        signOutFrame = tk.Frame(self.__settingsWindow)
+        #colour customisation
+        self.__themeOption = tk.StringVar()
+        self.__themeOption.set(self.__themeStrings[0])
+        themeDropDown = tk.OptionMenu(settingsMenu,self.__themeOption,*self.__themeStrings)
+        themeDropDown.config(bg=bgCol,fg=txtCol)
+        themeDropDown["menu"].config(bg=bgCol,fg=txtCol)
+        themeDropDown.pack()
+        themeSelectButton = tk.Button(settingsMenu, text="Update Theme",bg=bgCol,fg=txtCol,command=self.__updateTheme)
+        themeSelectButton.pack()
+        #sound customisation
+        self.__audioOption = tk.StringVar()
+        self.__audioOption.set(self.__soundPresets[0])
+        audioDropDown = tk.OptionMenu(settingsMenu,self.__audioOption,*self.__soundPresets)
+        audioDropDown.config(bg=bgCol,fg=txtCol)
+        audioDropDown["menu"].config(bg=bgCol,fg=txtCol)
+        audioDropDown.pack()
+        audioSelectButton = tk.Button(settingsMenu, text="Update Audio Preset",bg=bgCol,fg=txtCol,command=self.__updateAudio)
+        audioSelectButton.pack()
+        #mute button
+        self.__muteButton = tk.Button(settingsMenu,text=("Mute","Unmute")[self.__muted],command=self.__toggleMute,bg=bgCol,fg=txtCol)
+        self.__muteButton.pack()
+        #Sign out button
+        signOutFrame = tk.Frame(self.__settingsWindow,bg=bgCol)
         signOutFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.75),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
-        signOutButton = tk.Button(signOutFrame, text="Sign Out", command=self.__attemptSignOut)
+        signOutButton = tk.Button(signOutFrame, text="Sign Out", command=self.__attemptSignOut,bg=bgCol,fg=txtCol)
         signOutButton.pack(expand=True,fill=tk.BOTH)
-        quitFrame = tk.Frame(self.__settingsWindow)
+        quitFrame = tk.Frame(self.__settingsWindow,bg=bgCol)
         quitFrame.place(x=round(dims[0]*0.75),y=round(dims[1]*0.85),width = round(dims[1]*0.15), height= round(dims[1]*0.05))
-        quitButton = tk.Button(quitFrame, text="Close", command=self.__closeSettings)
+        quitButton = tk.Button(quitFrame, text="Close", command=self.__closeSettings,bg=bgCol,fg=txtCol)
         quitButton.pack(expand=True,fill=tk.BOTH)
         #this needs to be last for layering
         if self.__dataBaseManager.checkLoggedIn():
-            self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername())
+            self.__logInMessage = tk.Label(self.__settingsWindow, text="Logged in as " + self.__dataBaseManager.getUsername(),bg=bgCol,fg=txtCol)
             self.__updateLoginInputs()
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
         else:
-            self.__logInMessage = tk.Label(self.__settingsWindow)
+            self.__logInMessage = tk.Label(self.__settingsWindow,bg=bgCol,fg=txtCol)
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
+
+    def __toggleMute(self):
+        self.__settingsManager.toggleMute()
+        self.__muted = self.__settingsManager.getMuted()
+        self.__muteButton.config(text=("Mute","Unmute")[self.__muted])
+
+    def __updateTheme(self):
+        ind = self.__themeStrings.index(self.__themeOption.get())
+        self.__settingsManager.setTheme(ind)
+        tkinter.messagebox.showinfo("Restart Game", "Restart needed for Theme to update")
+        self.__closeSettings()
+        self.__openSettingsWindow()
+    
+    def __updateAudio(self):
+        self.__audioPreset = self.__audioOption.get().lower()
+        self.__settingsManager.setAudio(self.__audioPreset)
 
     def __updateLoginInputs(self):
         self.__logInInputs[3].pack_forget()
@@ -465,10 +521,11 @@ class GUI(UI):
         self.loadButton()
     
     def toggleWrite(self,event):
+        self.__GUIGame.updateWriteMode()
         self._Game.toggleWrite()
 
     def playRandom(self):
-        self._Game.newGame(self.__difficultySlider.get())
+        self._Game.newGame(self.__difficultySlider.get(),gameType = self.__gameModes.index(self.__selectedGameMode.get()))
         self.__errorCells = self._Game.getErrorCells()
         self.__errors = 0
         self.__gameScreen()

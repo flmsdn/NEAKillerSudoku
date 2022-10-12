@@ -5,7 +5,6 @@ import tkinter.filedialog as fd
 import tkinter.simpledialog as sd
 import re, sys
 from PIL import Image, ImageTk
-import playsound as ps
 
 # handles the Tkinter for the GUI
 class GUIGame():

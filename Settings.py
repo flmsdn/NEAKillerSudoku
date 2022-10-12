@@ -19,6 +19,13 @@ class SettingsManager():
         folder = self.__path[:-14]
         return [k for k in os.listdir(folder) if "Theme" in k]
 
+    def setTheme(self,ind):
+        folder = self.__path[:-14]
+        themeFiles =  [k for k in os.listdir(folder) if "Theme" in k]
+        if not 0<=ind<len(themeFiles): return
+        self.__config["Theme"] = ind
+        self.__saveSettings()
+
     def loadSettingsFile(self):
         folder = self.__path[:-14]
         if "settings.json" not in os.listdir(folder):
@@ -33,11 +40,11 @@ class SettingsManager():
             self.__config["Hash"] = None
             incompleteConfigFile = True
         if incompleteConfigFile:
-            self.saveSettings() #if any new fields needed to be added, update the settings file as soon as possible
+            self.__saveSettings() #if any new fields needed to be added, update the settings file as soon as possible
     
     def __createSettingsFile(self):
         with open(self.__path,"w") as file:
-            self.__config = {"AccountName":None,"Hash":None}
+            self.__config = {"AccountName":None,"Hash":None, "Theme":3, "Audio":"classic", "Muted": False}
             file.write(json.dumps(self.__config,separators=(",",":")))
 
     def getAccount(self):
@@ -46,11 +53,25 @@ class SettingsManager():
     def getConfigTheme(self):
         return self.__config["Theme"]
 
+    def getConfigAudio(self):
+        return self.__config["Audio"]
+    
+    def setAudio(self,audio):
+        self.__config["Audio"] = audio
+        self.__saveSettings()
+    
+    def toggleMute(self):
+        self.__config["Muted"] = not self.__config["Muted"]
+        self.__saveSettings()
+    
+    def getMuted(self):
+        return self.__config["Muted"]
+
     def updateAccount(self,username,hash):
         self.__config["AccountName"] = username
         self.__config["Hash"] = hash
-        self.saveSettings()
+        self.__saveSettings()
 
-    def saveSettings(self):
+    def __saveSettings(self):
         with open(self.__path,"w") as saveFile:
             saveFile.write(json.dumps(self.__config,separators=(",",":")))

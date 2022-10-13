@@ -461,14 +461,15 @@ class GUI(UI):
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
     
     def __attemptSignUp(self):
-        successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs])
+        successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs[:2]])
         if successfulSignUp:
             print("Successfully signed up")
+            self.__dataBaseManager.attemptLogin(*[a.get() for a in self.__logInInputs[:2]])
             for a in self.__logInInputs[:2]: a.delete(0,tk.END)
             dims = (self.__settingsWindow.winfo_screenwidth(),self.__settingsWindow.winfo_screenheight())
             self.__updateLoginInputs()
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
-            self.__logInMessage.place(x=round(self.dims[0]*0.2),y=round(dims[1]*0.1),width=round(self.dims[0]*0.2),height=round(dims[1]*0.1))
+            self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.1),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
     def __attemptSignOut(self):
         if self.__dataBaseManager.checkLoggedIn():

@@ -1,4 +1,5 @@
 from itertools import product
+from time import sleep, time
 import tkinter as tk
 import numpy as np
 import tkinter.filedialog as fd
@@ -12,6 +13,7 @@ class GUIGame():
     GRID_OUTLINE = 6
     GRID_NONET = 4
     GRID_INNER = 2
+    ANIMATION_SPEED = 0.1
 
     def __init__(self,theme=None):
         self.gameWindow = None
@@ -27,6 +29,7 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
         self.__gameOver = False
+        self.__animationStart = 0
         self.__writeMode = "Pencil"
         self.errorCrosses = None
         self.loadedImages = []
@@ -48,7 +51,10 @@ class GUIGame():
         return sorted([0,val,255])[1]
 
     def __mulC(self,a,b):
-        return tuple([ self.__clamp(round(a[x]*b[x])) for x in range(len(a))])
+        try:
+            return tuple([ self.__clamp(round(a[x]*b[x])) for x in range(len(a))])
+        except:
+            return tuple([ self.__clamp(round(a[x]*b)) for x in range(len(a))])
     
     def __addC(self,a,b):
         return tuple([self.__clamp(a[x]+b[x]) for x in range(len(a))])
@@ -64,6 +70,7 @@ class GUIGame():
     
     def endGame(self):
         self.__gameComplete = True
+        self.__animationStart = time()
     
     def resetGame(self):
         self.__selectedCell = None
@@ -256,7 +263,7 @@ class GUIGame():
         #get line colours
         colDiff = self.__subC(self.__colours["line"],(128,128,128))
         colMul = self.__mulC(colDiff,(0.2,0.2,0.2))
-        if self.__gameComplete or self.__gameOver:
+        if self.__animationStart == 0 and (self.__gameComplete or self.__gameOver):
             fade = (130,130,130)
             lineCol = self.rgbToHex(self.__addC(self.__colours["line"],fade))
             inlineCol = self.rgbToHex(self.__addC(self.__addC( (128,128,128), colMul),fade))
@@ -268,12 +275,26 @@ class GUIGame():
         self.gameGrid.delete("all")
         cellWidth, centreOffset = (self.__width)/9, self.__width/18
         #highlighting selected cell
-        if not self.__selectedCell is None:
+        if not self.__selectedCell is None and not self.__gameComplete:
             nx, ny = self.__selectedCell[0]//3-1, self.__selectedCell[1]//3-1
             #highlighting row and column
             self.gameGrid.create_rectangle(0,mi+l*self.__selectedCell[1],ms,mi+l*(self.__selectedCell[1]+1),fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
             self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],0,mi+l*(self.__selectedCell[0]+1),ms,fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
             self.gameGrid.create_rectangle(mi+l*self.__selectedCell[0],mi+l*self.__selectedCell[1],mi+l*(self.__selectedCell[0]+1),mi+l*(self.__selectedCell[1]+1),fill=self.rgbToHex(self.__colours["selected"]),outline="")
+        elif self.__animationStart>0:
+            def calcCol(dist):
+                k=sorted([0,1, abs(time()-dist*self.ANIMATION_SPEED-self.__animationStart)])[1]/2
+                colDiffAnim = self.__mulC(self.__colours["selected"], k+0.5)
+                return self.__addC(colDiffAnim,self.__mulC(self.__colours["line"], 0.5-k))
+            def calcDist(x,y): return abs(4-x)+abs(4-y)
+            #dist is abs(4-x)+abs(4-y)
+            distDict = {i:calcCol(i) for i in range(9)}
+            for xO in range(9):
+                for yO in range(9):
+                    colMul = distDict[calcDist(xO,yO)]
+                    self.gameGrid.create_rectangle(mi+l*xO,mi+l*yO,mi+l*(xO+1),mi+l*(yO+1),fill=self.rgbToHex(distDict[calcDist(xO,yO)]),outline="")
+            if self.__animationStart+20*self.ANIMATION_SPEED<time():
+                self.__animationStart = 0
         for r,c in product(range(9),range(9)):
             if self.__errorChecking and (c,r) in errorCells:
                     self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.rgbToHex(self.__colours["errorCell"]),outline="")
@@ -282,7 +303,7 @@ class GUIGame():
                     self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=self.rgbToHex(self.__colours["error"]))
                 else:
                     if not self.__selectedCell is None:
-                        if npGrid[r,c]==npGrid[self.__selectedCell[1],self.__selectedCell[0]] and [c,r]!=self.__selectedCell:
+                        if npGrid[r,c]==npGrid[self.__selectedCell[1],self.__selectedCell[0]] and [c,r]!=self.__selectedCell and not self.__gameComplete:
                             self.gameGrid.create_rectangle(mi+l*c,mi+l*r,mi+l*(c+1),mi+l*(r+1),fill=self.rgbToHex(self.__colours["selectedRC"]),outline="")
                     self.gameGrid.create_text(centreOffset+c*cellWidth,centreOffset+r*cellWidth,text=str(npGrid[r,c]),font=(fontFixed if [c,r] in fixedCells else fontNormal),fill=lineCol)
             elif type(pencilMarkings)==list:
@@ -312,7 +333,15 @@ class GUIGame():
         for r in [3,6]:
             self.gameGrid.create_line(mi+r*l, 0, mi+r*l, ms, width=self.GRID_NONET,fill=lineCol)
             self.gameGrid.create_line(0, mi+r*l, ms, mi+r*l, width=self.GRID_NONET,fill=lineCol)
-        if self.__gameComplete:
-            self.gameGrid.create_text(centreOffset+4*cellWidth,centreOffset+4*cellWidth,text="Well done! Game Complete",font=fontFixed)
+        if self.__animationStart>0:
+            self.gameWindow.update()
+            sleep(1/60)
+            self.updateGrid(grid, fixedCells, errorCells,errorCount,pencilMarkings,cages,cageDict)
+        if self.__gameComplete and self.__animationStart==0:
+            text = self.gameGrid.create_text(centreOffset+4*cellWidth,centreOffset+4*cellWidth,text="Well done! Game Complete",font=fontFixed, fill=lineCol)
+            textBG = self.gameGrid.create_rectangle(self.gameGrid.bbox(text), outline=lineCol, fill=self.rgbToHex(self.__colours["background"]))
+            self.gameGrid.tag_raise(text,textBG)
         elif self.__gameOver:
-            self.gameGrid.create_text(centreOffset+4*cellWidth,centreOffset+4*cellWidth,text="Game Over",font=fontFixed)
+            text = self.gameGrid.create_text(centreOffset+4*cellWidth,centreOffset+4*cellWidth,text="Game Over!",font=fontFixed, fill=lineCol)
+            textBG = self.gameGrid.create_rectangle(self.gameGrid.bbox(text), outline=lineCol, fill=self.rgbToHex(self.__colours["background"]))
+            self.gameGrid.tag_raise(text,textBG)

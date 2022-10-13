@@ -19,7 +19,7 @@ class Game():
         self.__writeMode = 0 #0 is pen, 1 is pencil
         self.__time = 0
         self.__openTime = None
-
+        
     #returns the current game file name
     def getFile(self):
         return self.__gameFile
@@ -223,5 +223,4 @@ class Game():
         return self.__time + time()-self.__openTime
         
 if __name__ == "__main__":
-    g = Game()
-    g.deleteGame("Game1.json")
+    pass

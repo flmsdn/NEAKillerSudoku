@@ -387,7 +387,7 @@ class GUI(UI):
         settingsText.pack(fill=tk.X)
         #colour customisation
         self.__themeOption = tk.StringVar()
-        self.__themeOption.set(self.__themeStrings[0])
+        self.__themeOption.set(self.__themeStrings[self.__settingsManager.getConfigTheme()])
         themeDropDown = tk.OptionMenu(settingsMenu,self.__themeOption,*self.__themeStrings)
         themeDropDown.config(bg=bgCol,fg=txtCol)
         themeDropDown["menu"].config(bg=bgCol,fg=txtCol)
@@ -396,7 +396,7 @@ class GUI(UI):
         themeSelectButton.pack()
         #sound customisation
         self.__audioOption = tk.StringVar()
-        self.__audioOption.set(self.__soundPresets[0])
+        self.__audioOption.set(self.__audioPreset.capitalize())
         audioDropDown = tk.OptionMenu(settingsMenu,self.__audioOption,*self.__soundPresets)
         audioDropDown.config(bg=bgCol,fg=txtCol)
         audioDropDown["menu"].config(bg=bgCol,fg=txtCol)
@@ -569,6 +569,7 @@ class GUI(UI):
         super()._save(fileName,self.__errors)
 
     def clickCanvas(self,event):
+        if self.__GUIGame.gameComplete(): return
         self.__GUIGame.cellClick(event)
         self.display()
 

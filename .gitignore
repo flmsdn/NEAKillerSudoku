@@ -1,3 +1,4 @@
 LocalGames/
 Resources/config/settings.json
 Resources/Accounts.db
+__pycache__/

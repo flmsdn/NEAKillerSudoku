@@ -291,9 +291,13 @@ class GUI(UI):
         loadButton = tk.Button(loadFrame,text="Load", command=self.playLoad,fg=txtCol, bg=bgCol)
         loadButton.pack(expand=True,fill=tk.BOTH)
         games = os.listdir(sys.path[0]+"\\LocalGames")
+        gameNames = []
+        for fileName in games:
+            m = re.match(r"(.*)\.json",fileName)
+            if m.groups(): gameNames.append(m.groups()[0])
         self.__gameOption = tk.StringVar()
-        self.__gameOption.set(games[0])
-        optionDropDown = tk.OptionMenu(self.__root,self.__gameOption,*games)
+        self.__gameOption.set(gameNames[0])
+        optionDropDown = tk.OptionMenu(self.__root,self.__gameOption,*gameNames)
         optionDropDown.config(bg=bgCol,fg=txtCol)
         optionDropDown["menu"].config(bg=bgCol,fg=txtCol)
         optionDropDown.place(x=self.__dim[0]//2+offsetHoriz,y=offsetVert+round(self.__dim[1]*0.05))
@@ -632,13 +636,4 @@ class GUI(UI):
         self.__root = None
 
 if __name__ == "__main__":
-    r = tk.Tk()
-    frame = tk.Frame(r)
-    f = [a for a in list(tkinter.font.families()) if not "Microsoft" in a ][100:]
-    for i in f:
-        tk.Label(frame,text=i,font=(i,10)).pack()
-    s = tk.Scrollbar(frame,orient="vertical")
-    frame.pack()
-    s.pack(side=tk.LEFT)
-    #s.config(frame.yview)
-    r.mainloop()
+    pass

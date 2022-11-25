@@ -205,7 +205,10 @@ class GUIGame():
             self.__selectedCell = gridCell
 
     def savePrompt(self):
-        st = sd.askstring("Prompt","Enter a name to save as: ")
+        while True:
+            st = sd.askstring("Prompt","Enter a name to save as (Only using alphanumeric characters): ")
+            m = re.match("^([a-zA-Z0-9]*)$",st)
+            if m: break
         return st
     
     def loadPrompt(self):

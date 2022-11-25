@@ -94,6 +94,7 @@ class Generator():
                                         return True
                                 else:
                                     self.__count+=1
+                                    if self.__count>1: return
                                     if saveState:
                                         grid[row, col] = num
                                     break
@@ -230,6 +231,7 @@ class Generator():
                                             return True
                                     else:
                                         self.__count+=1
+                                        if self.__count>1: return
                                         if saveState:
                                             grid[row, col] = num
                                         break
@@ -280,7 +282,6 @@ class Generator():
         self.__cellList = []
         for cage in self.__cages:
             self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
-        #TODO potential try generating from no cells and filling up may work better for killers
         while difficulty:
             #optimised randomly getting a cell
             cells = list(zip(*np.where(grid>0)))
@@ -297,4 +298,6 @@ class Generator():
         return grid.tolist(), allCages
 
 if __name__ == "__main__":
-    pass
+    g = Generator()
+    gr, cagesList = g.genKillerGrid(3)
+    print(g.getCages(gr,cagesList))

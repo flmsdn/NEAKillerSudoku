@@ -19,6 +19,7 @@ class Game():
         self.__writeMode = 0 #0 is pen, 1 is pencil
         self.__time = 0
         self.__openTime = None
+        self.__grid = None
         
     #returns the current game file name
     def getFile(self):
@@ -79,7 +80,7 @@ class Game():
         elif self.__gameType==1:
             self.__grid = self.__gen.solveKillerGrid(emptiedGrid,self.__cages)
 
-    def newGame(self, difficulty,gameType=1):
+    def newGame(self, difficulty, gameType=1):
         #reset the game
         self.__gameFile = ""
         self.__gameType = gameType

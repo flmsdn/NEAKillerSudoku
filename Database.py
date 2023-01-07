@@ -42,7 +42,7 @@ class DBManager():
                 return True
         return False
 
-    def attemptSignUp(self,username,password):
+    def attemptSignUp(self,username,password): #Single table SQL query to add accounts
         pwHash = self.__hashPassword(password)
         #check if the password hash in the table is in the account
         hashQuery = """SELECT pwhash FROM accounts WHERE name='"""+username+"'"

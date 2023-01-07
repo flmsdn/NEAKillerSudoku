@@ -6,6 +6,8 @@ import tkinter.filedialog as fd
 import tkinter.simpledialog as sd
 import re, sys
 from PIL import Image, ImageTk
+from threading import Timer
+
 
 # handles the Tkinter for the GUI
 class GUIGame():
@@ -15,6 +17,7 @@ class GUIGame():
     GRID_INNER = 2
     ANIMATION_SPEED = 0.1
 
+    #  Skill group A - files organised with a set structure (also shown well in Settings.py, SettingsManager)
     def __init__(self,theme=None):
         self.gameWindow = None
         self.gameGrid = None
@@ -86,7 +89,7 @@ class GUIGame():
         self.gameWindow.configure(bg=self.rgbToHex(self.__colours["background"]))
         self.gameWindow.title("Game")
         self.gameWindow.state("zoomed")
-        self.gameWindow.resizable(True,True)
+        self.gameWindow.minsize(500, 500)
         self.__dim = [self.gameWindow.winfo_screenwidth(),self.gameWindow.winfo_screenheight()]
         self.__selectedCell = None
         self.__gameComplete = False
@@ -97,6 +100,7 @@ class GUIGame():
         self.gameGrid = tk.Canvas(self.gameWindow,width=self.__width,height=self.__width,highlightthickness=0,bg=self.rgbToHex(self.__colours["canvas"]))
         self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
         self.loadSizedWindow()
+        self.gameWindow.resizable(True,True)
     
     def loadSizedWindow(self):
         preservedWidgets = [tk.Canvas]
@@ -108,7 +112,6 @@ class GUIGame():
         txtCol = self.rgbToHex(self.__colours["line"])
         #undo and redo images
         self.__width = round(self.__dim[1]*0.7)
-        scale = self.__width/self.gameGrid.winfo_width()
         self.gameGrid.config(width = self.__width,height=self.__width)
         self.gameGrid.place(x=self.__dim[0]/2-self.__width/2,y=round(self.__dim[1]*0.45)-self.__width/2)
         imLen = round(self.__dim[1]*0.05)
@@ -159,7 +162,7 @@ class GUIGame():
         #write mode button
         writeModeFrame = tk.Frame(self.gameWindow)
         self.writeModeButton = tk.Button(writeModeFrame,text=self.__writeMode, command=self.__functions[6],bg=bgCol,fg=txtCol)
-        writeModeFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,anchor=tk.NE)
+        writeModeFrame.place(x=self.__dim[0]/2+self.__width/2-imOffset-imLen,y=self.__dim[1]*0.45-self.__width/2-3*buttonHeight//2,anchor=tk.NE,width=self.__width*0.25,height=self.__width*0.07)
         self.writeModeButton.pack(side=tk.TOP,expand=True,fill=tk.BOTH,anchor=tk.NE)
         self.errorCrosses = [None]*3
         errorFrames = [None]*3
@@ -177,6 +180,7 @@ class GUIGame():
         if [event.width,event.height]!=self.__dim:
             if type(event.widget)==tk.Toplevel:
                 #the window has been resized
+                self.__resizing = True
                 self.__dim = [event.width,event.height]
                 self.loadSizedWindow()
 

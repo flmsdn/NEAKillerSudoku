@@ -49,6 +49,7 @@ class Generator():
             cages.append(Cage(cage[1:],grid,cage[0]))
         return cages
     
+    #  Skill group B - use of dictionaries
     def getCageDict(self,cages):
         cageDict = {}
         for e,cage in enumerate(cages):
@@ -77,6 +78,7 @@ class Generator():
                 break
         grid[row][col]=0
     
+    #  Skill group A - Use of recursive functions
     def __iterateGrid(self,grid,saveState):
         #iterate over all cells
         for row, col in itertools.product(range(9),range(9)):
@@ -102,6 +104,35 @@ class Generator():
         if not saveState:
             grid[row, col]=0
     
+    def __iterateKillerGrid(self,grid,saveState):
+        #iterate over all cells
+        for row, col in itertools.product(range(9),range(9)):
+            if grid[row][col]==0:
+                #if the value is 0, iterate over all possible values
+                for num in range(1,10):
+                    if not num in grid[row,:]:
+                        if not num in grid[:,col]:
+                            nonetX, nonetY = col//3, row//3
+                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
+                            if not num in nonet:
+                                cInd = self.__cageDict[self.__coordToInd([col,row])]
+                                cage = self.__cages[cInd]
+                                vals = [c for c in self.__cellList[cInd] if c >0]
+                                if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
+                                    grid[row][col] = num
+                                    if 0 in grid:
+                                        if self.__iterateKillerGrid(grid,saveState):
+                                            return True
+                                    else:
+                                        self.__count+=1
+                                        if self.__count>1: return
+                                        if saveState:
+                                            grid[row, col] = num
+                                        break
+                break
+        if not saveState:
+            grid[row, col]=0
+
     def solveGrid(self,grid):
         while True:
             gridTrial = np.copy(grid)
@@ -109,6 +140,8 @@ class Generator():
             if self.checkComplete(gridTrial):
                 return gridTrial.tolist()
     
+    #  Skill group A - Complex User Defined Algorithms
+    #  Skill group B - Use of multidimensional NumPy arrays and lists
     def genGrid(self, difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
         self.__fillGrid(grid) #fill grid in with random values
@@ -130,6 +163,38 @@ class Generator():
                 difficulty-=1
         return grid.tolist()
     
+    def genKillerGrid(self,difficulty):
+        grid = np.array([[0]*9]*9,ndmin=2) #empty grid
+        self.__fillGrid(grid) #fill grid in with random values
+        #limit difficulty
+        if difficulty>7: difficulty=7
+        elif difficulty<1: difficulty=1
+        emptiedGrid, cages = self.__checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
+        #now we need to find a way to create cages around remaining cells
+        #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
+        emptiedGrid,newCages = self.__fillInFinalCages(emptiedGrid)
+        allCages = cages+newCages
+        self.__cages = self.getCages(allCages,grid)
+        self.__cageDict = self.getCageDict(self.__cages)
+        self.__cellList = []
+        for cage in self.__cages:
+            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
+        while difficulty:
+            #optimised randomly getting a cell
+            cells = list(zip(*np.where(grid>0)))
+            r,c = random.choice(cells)
+            oldVal = grid[r,c]
+            grid[r,c]=0
+            #copy grid so no permanent change are made
+            gridCopy = np.copy(grid)
+            self.__count=0
+            self.__iterateKillerGrid(gridCopy,False)
+            if self.__count!=1:
+                grid[r,c]=oldVal
+                difficulty-=1
+        return grid.tolist(), allCages
+
+    #  Skill group A - Pattern Matching
     def __findShape(self,grid,shape):
         usedCoords = []
         #shape coordinates are in the form [y,x]
@@ -210,35 +275,6 @@ class Generator():
                         cages.append( [cSum] + cReverse )
         return tempGrid, cages
     
-    def __iterateKillerGrid(self,grid,saveState):
-        #iterate over all cells
-        for row, col in itertools.product(range(9),range(9)):
-            if grid[row][col]==0:
-                #if the value is 0, iterate over all possible values
-                for num in range(1,10):
-                    if not num in grid[row,:]:
-                        if not num in grid[:,col]:
-                            nonetX, nonetY = col//3, row//3
-                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
-                            if not num in nonet:
-                                cInd = self.__cageDict[self.__coordToInd([col,row])]
-                                cage = self.__cages[cInd]
-                                vals = [c for c in self.__cellList[cInd] if c >0]
-                                if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
-                                    grid[row][col] = num
-                                    if 0 in grid:
-                                        if self.__iterateKillerGrid(grid,saveState):
-                                            return True
-                                    else:
-                                        self.__count+=1
-                                        if self.__count>1: return
-                                        if saveState:
-                                            grid[row, col] = num
-                                        break
-                break
-        if not saveState:
-            grid[row, col]=0
-
     def __checkKillerComplete(self, grid):
         npBoard = np.array(grid) #get a numpy 2D array of the grid
         gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
@@ -266,38 +302,5 @@ class Generator():
             if self.__checkKillerComplete(gridTrial): #check Killer
                 return gridTrial.tolist()
 
-    def genKillerGrid(self,difficulty):
-        grid = np.array([[0]*9]*9,ndmin=2) #empty grid
-        self.__fillGrid(grid) #fill grid in with random values
-        #limit difficulty
-        if difficulty>7: difficulty=7
-        elif difficulty<1: difficulty=1
-        emptiedGrid, cages = self.__checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
-        #now we need to find a way to create cages around remaining cells
-        #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
-        emptiedGrid,newCages = self.__fillInFinalCages(emptiedGrid)
-        allCages = cages+newCages
-        self.__cages = self.getCages(allCages,grid)
-        self.__cageDict = self.getCageDict(self.__cages)
-        self.__cellList = []
-        for cage in self.__cages:
-            self.__cellList.append([grid[c[1],c[0]] for c in cage.cells])
-        while difficulty:
-            #optimised randomly getting a cell
-            cells = list(zip(*np.where(grid>0)))
-            r,c = random.choice(cells)
-            oldVal = grid[r,c]
-            grid[r,c]=0
-            #copy grid so no permanent change are made
-            gridCopy = np.copy(grid)
-            self.__count=0
-            self.__iterateKillerGrid(gridCopy,False)
-            if self.__count!=1:
-                grid[r,c]=oldVal
-                difficulty-=1
-        return grid.tolist(), allCages
-
 if __name__ == "__main__":
-    g = Generator()
-    gr, cagesList = g.genKillerGrid(3)
-    print(g.getCages(gr,cagesList))
+    pass

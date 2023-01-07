@@ -35,6 +35,7 @@ class Action():
 
 # User Interface class that the Terminal and GUI will inherit from
 class UI():
+    #  Skill group A - Complex OOP
     def __init__(self,loadOption=0):
         self._gameOver = False
         self._actionStack = []
@@ -53,7 +54,7 @@ class UI():
         self._actionStack.append(action)
         self._redoStack = []
 
-    #undo move
+    #  Skill group A - Use of stack operations for undo and redo operations
     def _undo(self):
         if not self._actionStack: return False
         action = self._actionStack.pop()
@@ -84,6 +85,7 @@ class UI():
             fileName+=".json"
         elif len(fileName)<5:
             fileName+=".json"
+        self._actionStack = []
         self._Game.loadGame(fileName)
 
     #play the game - the main game loop
@@ -100,6 +102,7 @@ class UI():
 
 # Terminal UI
 class Terminal(UI):
+    #Skill group A - Complex OOP
     def __init__(self, file=None):
         super().__init__(file)
 
@@ -151,7 +154,7 @@ class Terminal(UI):
 
         def validInp(text, val):
             value = input(text)
-            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save, "f": Solve } #use a dictionary to avoid long if statements
+            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save, "f": Solve, "l": Load } #use a dictionary to avoid long if statements
             if value.lower() in gameEvents:
                 raise gameEvents[value.lower()]
             minValue = -1 if val else 0
@@ -180,13 +183,13 @@ class Terminal(UI):
                     print("Game Terminated")
                     return
                 except Undo:
-                    if self.undo():
+                    if self._undo():
                         print("Action Undone")
                         self.display()
                     else:
                         print("There were no moves to Undo")
                 except Redo:
-                    if self.redo():
+                    if self._redo():
                         print("Action Redone")
                         self.display()
                     else:
@@ -198,6 +201,7 @@ class Terminal(UI):
                     if prompt.lower()=="y":
                         self._save()
                     self._load()
+                    self.display()
                 except Solve:
                     prompt = input("Are you sure you want to solve the grid? (y/n)")
                     if prompt.lower()=="y":
@@ -233,6 +237,7 @@ class Terminal(UI):
 
 # Graphical User Interface
 class GUI(UI):
+    #Skill group A - Complex OOP
     def __init__(self, file=None):
         super().__init__(file)
         self.__root = None
@@ -591,7 +596,7 @@ class GUI(UI):
     def resize(self,event):
         self.__GUIGame.resize(event)
         self.display()
-        
+
     def __numInput(self,event):
         if self.__GUIGame.gameComplete(): return
         if event.keycode==8:

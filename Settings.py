@@ -7,14 +7,6 @@ class SettingsManager():
         self.__path = sys.path[0]+"\\Resources\\config\\settings.json"
         self.loadSettingsFile()
 
-    def getTheme(self,ind):
-        folder = [k for k in os.listdir(self.__path[:-14]) if "Theme" in k]
-        with open(self.__path[:-14]+"\\"+folder[ind],"r") as file:
-            theme = json.load(file)
-        for k in theme.keys():
-            theme[k] = tuple(theme[k])
-        return theme
-
     def getThemes(self):
         folder = self.__path[:-14]
         return [k for k in os.listdir(folder) if "Theme" in k]
@@ -26,6 +18,7 @@ class SettingsManager():
         self.__config["Theme"] = ind
         self.__saveSettings()
 
+    #  Skill group B - reading and writing JSON
     def loadSettingsFile(self):
         folder = self.__path[:-14]
         if "settings.json" not in os.listdir(folder):
@@ -42,6 +35,18 @@ class SettingsManager():
         if incompleteConfigFile:
             self.__saveSettings() #if any new fields needed to be added, update the settings file as soon as possible
     
+    def __saveSettings(self):
+        with open(self.__path,"w") as saveFile:
+            saveFile.write(json.dumps(self.__config,separators=(",",":")))
+            
+    def getTheme(self,ind): #Skill group B - reading and writing JSON
+        folder = [k for k in os.listdir(self.__path[:-14]) if "Theme" in k]
+        with open(self.__path[:-14]+"\\"+folder[ind],"r") as file:
+            theme = json.load(file)
+        for k in theme.keys():
+            theme[k] = tuple(theme[k])
+        return theme
+
     def __createSettingsFile(self):
         with open(self.__path,"w") as file:
             self.__config = {"AccountName":None,"Hash":None, "Theme":3, "Audio":"classic", "Muted": False}
@@ -71,7 +76,3 @@ class SettingsManager():
         self.__config["AccountName"] = username
         self.__config["Hash"] = hash
         self.__saveSettings()
-
-    def __saveSettings(self):
-        with open(self.__path,"w") as saveFile:
-            saveFile.write(json.dumps(self.__config,separators=(",",":")))

@@ -1,4 +1,6 @@
 LocalGames/
+!LocalGames/DefaultGame.json
+!LocalGames/DefaultGameKiller.json
 Resources/config/settings.json
 Resources/Accounts.db
 __pycache__/

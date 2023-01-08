@@ -58,80 +58,77 @@ class Generator():
                 cageDict[cInd] = e
         return cageDict
     
-    #logic from https://www.101computing.net/sudoku-generator-algorithm/
+    #checks if a given number is valid if it were added
+    def __checkValidity(self, grid, row, col, number):
+        if number in grid[row]:
+            return False
+        for i in range(9):
+            if grid[i][col] == number:
+                return False
+        grid_row = row // 3
+        grid_col = col // 3
+        for i in range(3):
+            for j in range(3):
+                if grid[grid_row * 3 + i][grid_col * 3 + j] == number:
+                    return False
+        return True
+    def __checkKillerValidity(self, grid, row, col, number):
+        if self.__checkValidity(grid,row,col,number): #checks regular validity along with the current cage sum
+            cInd = self.__cageDict[self.__coordToInd([col,row])]
+            cage = self.__cages[cInd]
+            vals = [c for c in self.__cellList[cInd] if c >0]
+            if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
+                return True
+    #fills an empty 9x9 grid
     def __fillGrid(self,grid):
-        for row, col in itertools.product(range(9),range(9)):
-            if grid[row][col]==0:
-                random.shuffle(self.__nums)
-                for num in self.__nums:
-                    if not num in grid[row,:]:
-                        if not num in grid[:,col]:
-                            nonetX, nonetY = col//3, row//3
-                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
-                            if not num in nonet:
-                                grid[row][col] = num
-                                if 0 in grid:
-                                    if self.__fillGrid(grid):
-                                        return True
-                                else:
-                                    return True
-                break
-        grid[row][col]=0
+        for i in range(9):
+            for j in range(9):
+                if grid[i][j] == 0:
+                    for number in range(1, 10):
+                        if self.__checkValidity(grid, i, j, number):
+                            grid[i][j] = number
+                            if self.__fillGrid(grid):
+                                return True
+                            grid[i][j] = 0
+                    return False
+        return True
     
     #  Skill group A - Use of recursive functions
+    #checks if a grid, in its current state, is uniquely solvable
     def __iterateGrid(self,grid,saveState):
-        #iterate over all cells
-        for row, col in itertools.product(range(9),range(9)):
-            if grid[row][col]==0:
-                #if the value is 0, iterate over all possible values
-                for num in range(1,10):
-                    if not num in grid[row,:]:
-                        if not num in grid[:,col]:
-                            nonetX, nonetY = col//3, row//3
-                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
-                            if not num in nonet:
-                                grid[row][col] = num
-                                if 0 in grid:
-                                    if self.__iterateGrid(grid,saveState):
-                                        return True
-                                else:
-                                    self.__count+=1
-                                    if self.__count>1: return
-                                    if saveState:
-                                        grid[row, col] = num
-                                    break
-                break
-        if not saveState:
-            grid[row, col]=0
+        #iterates over every cell
+        for i in range(9):
+            for j in range(9):
+                if grid[i][j] == 0:
+                    # checks all possible numbers
+                    for number in range(1, 10):
+                        if self.__checkValidity(grid, i, j, number):
+                            grid[i][j] = number
+                            if self.__iterateGrid(grid,saveState):
+                                if self.__count>1: return False #prunes when the count is too high
+                                if not saveState: grid[i][j] = 0
+                            grid[i][j] = 0
+                    # there are no solutions
+                    return False
+        # increment the count as a solution is found
+        self.__count+=1
+        return True
     
     def __iterateKillerGrid(self,grid,saveState):
-        #iterate over all cells
-        for row, col in itertools.product(range(9),range(9)):
-            if grid[row][col]==0:
-                #if the value is 0, iterate over all possible values
-                for num in range(1,10):
-                    if not num in grid[row,:]:
-                        if not num in grid[:,col]:
-                            nonetX, nonetY = col//3, row//3
-                            nonet = grid[nonetY*3:nonetY*3+3,nonetX*3:nonetX*3+3].flatten()
-                            if not num in nonet:
-                                cInd = self.__cageDict[self.__coordToInd([col,row])]
-                                cage = self.__cages[cInd]
-                                vals = [c for c in self.__cellList[cInd] if c >0]
-                                if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
-                                    grid[row][col] = num
-                                    if 0 in grid:
-                                        if self.__iterateKillerGrid(grid,saveState):
-                                            return True
-                                    else:
-                                        self.__count+=1
-                                        if self.__count>1: return
-                                        if saveState:
-                                            grid[row, col] = num
-                                        break
-                break
-        if not saveState:
-            grid[row, col]=0
+        #performs the same as before, but for killer sudoku grids
+        for i in range(9):
+            for j in range(9):
+                if grid[i][j] == 0:
+                    for number in range(1, 10):
+                        if self.__checkKillerValidity(grid, i, j, number):
+                            grid[i][j] = number
+                            if self.__iterateKillerGrid(grid,saveState):
+                                if self.__count>1: return False
+                                if not saveState: grid[i][j] = 0
+                            grid[i][j] = 0
+                    return False
+        self.__count+=1
+        return True
 
     def solveGrid(self,grid):
         while True:

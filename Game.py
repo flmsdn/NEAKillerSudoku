@@ -80,6 +80,7 @@ class Game():
         elif self.__gameType==1:
             self.__grid = self.__gen.solveKillerGrid(emptiedGrid,self.__cages)
 
+    #opens a newly generated grid as the current game
     def newGame(self, difficulty, gameType=1):
         #reset the game
         self.__gameFile = ""
@@ -117,6 +118,7 @@ class Game():
         saveFile.write(json.dumps(gameObject,separators=(",",":")))
         saveFile.close()
 
+    #loads a game from a file to play
     def loadGame(self,file="DefaultGame.json"):
         if not file or file==".json": file="DefaultGame.json"
         self.__gameFile = file
@@ -146,6 +148,7 @@ class Game():
             self.__time = 0
         self.__openTime = time() #get start time
 
+    #deletes a saved game file
     def deleteGame(self,file=None):
         if not file:
             file = self.__gameFile
@@ -156,24 +159,31 @@ class Game():
         except:
             return False
 
+    #returns a list of cells that have errors through confliction rules
     def getErrors(self):
         return self.__errors
 
+    #returns the game type (Killer or Regular Sudoku)
     def getType(self):
         return self.__gameType
 
+    #returns the game grid (cell pen-marked values)
     def getGrid(self):
         return self.__grid
 
+    #returns the killer cages
     def getCages(self):
         return self.__cages
 
+    #returns a dictionary linking cells and cages
     def getCagesDict(self):
         return self.__cageDict
     
+    #returns an individual cell value
     def getCell(self,x,y):
         return self.__grid[y][x]
 
+    #returns the pencil markings
     def getPencilMarkings(self):
         return self.__pencilMarkings
 
@@ -209,17 +219,21 @@ class Game():
             else:
                 self.__pencilMarkings[y][x] = [value]
     
+    #checks if a cell is able to be edited
     def checkCell(self,x,y):
         return not [x,y] in self.__fixedCells
 
+    #checks if the grid is full
     def checkFull(self):
         return not  self.EMPTY in np.array(self.__grid)
 
+    #checks if the grid is correct
     def checkComplete(self, grid=None):
         if grid is None:
             grid = self.__grid
         return self.__gen.checkComplete(grid)
 
+    #finds the total time the current game has been played for
     def getTime(self):
         return self.__time + time()-self.__openTime
         

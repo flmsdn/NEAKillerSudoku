@@ -18,7 +18,12 @@ class SettingsManager():
         self.__config["Theme"] = ind
         self.__saveSettings()
 
-    #  Skill group B - reading and writing JSON
+###########################################################
+#
+# CATEGORY B SKILL: reading and writing JSON
+# Reads JSON out of a file and into a dictionary object and saving it as JSON
+#
+###########################################################
     def loadSettingsFile(self):
         folder = self.__path[:-14]
         if "settings.json" not in os.listdir(folder):
@@ -38,7 +43,13 @@ class SettingsManager():
     def __saveSettings(self):
         with open(self.__path,"w") as saveFile:
             saveFile.write(json.dumps(self.__config,separators=(",",":")))
-            
+
+###########################################################
+#
+# CATEGORY B SKILL: Use of JSON
+# Loading from a JSON file to get the current colour theme
+#
+###########################################################
     def getTheme(self,ind): #Skill group B - reading and writing JSON
         folder = [k for k in os.listdir(self.__path[:-14]) if "Theme" in k]
         with open(self.__path[:-14]+"\\"+folder[ind],"r") as file:

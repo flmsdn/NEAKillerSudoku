@@ -1,12 +1,11 @@
 from itertools import product
-from time import sleep, time
 import tkinter as tk
 import numpy as np
 import tkinter.filedialog as fd
 import tkinter.simpledialog as sd
 import re, sys
 from PIL import Image, ImageTk
-from threading import Timer
+from time import sleep, time
 
 
 # handles the Tkinter for the GUI
@@ -17,7 +16,14 @@ class GUIGame():
     GRID_INNER = 2
     ANIMATION_SPEED = 0.1
 
-    #  Skill group A - files organised with a set structure (also shown well in Settings.py, SettingsManager)
+
+###########################################################
+#
+# CATEGORY A SKILL: file organisation
+# Use of a structured file organisation to have files stored in sensible locations (also shown well in Settings.py, SettingsManager)
+#
+###########################################################
+
     def __init__(self,theme=None):
         self.gameWindow = None
         self.gameGrid = None

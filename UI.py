@@ -35,7 +35,13 @@ class Action():
 
 # User Interface class that the Terminal and GUI will inherit from
 class UI():
-    #  Skill group A - Complex OOP
+###########################################################
+#
+# CATEGORY A SKILL: Use of Complex OOP
+# The UI class acts as a Base class that GUI and Terminal will inherit from with protected properties
+# This allows for polymorphism with functions like 'display' working differently in the Terminal and GUI
+#
+###########################################################
     def __init__(self,loadOption=0):
         self._gameOver = False
         self._actionStack = []
@@ -54,7 +60,12 @@ class UI():
         self._actionStack.append(action)
         self._redoStack = []
 
-    #  Skill group A - Use of stack operations for undo and redo operations
+###########################################################
+#
+# CATEGORY A SKILL: Stack Operations
+# Use of Stack Operations to store Actions to Undo and Redo in the game
+#
+###########################################################
     def _undo(self):
         if not self._actionStack: return False
         action = self._actionStack.pop()
@@ -102,12 +113,17 @@ class UI():
 
 # Terminal UI
 class Terminal(UI):
-    #Skill group A - Complex OOP
+###########################################################
+#
+# CATEGORY A SKILL: Complex OOP
+# The Terminal uses the UI class as the base for many of its methods
+#
+###########################################################
     def __init__(self, file=None):
         super().__init__(file)
 
     def run(self):
-        print(Colour.BLUE+Colour.BOLD+"Sudoku"+Colour.ENDC+"\n")
+        print(Colour.GREEN+Colour.BOLD+"Sudoku"+Colour.ENDC+"\n")
         print(open(sys.path[0]+"\\Resources\\Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
@@ -170,7 +186,7 @@ class Terminal(UI):
                 break
             while True:
                 try:
-                    x,y,val = validInp("Col to input (x coordinate): ",False), validInp("Row to input (y coordinate): ",False), validInp("Value: ",True)
+                    x,y,val = validInp("Col to input ("+Colour.BLUE+Colour.BOLD+"x" +Colour.ENDC+ " coordinate): ",False), validInp("Row to input ("+Colour.RED+Colour.BOLD+"y" +Colour.ENDC+" coordinate): ",False), validInp("Value: ",True)
                     if self._Game.checkCell(x-1,y-1):
                         break
                     else:
@@ -217,9 +233,9 @@ class Terminal(UI):
     def display(self):
         if self._Game.getType() == 0:
             grid = self._Game.getGrid()
-            printedGrid="  123 456 789\n"
+            printedGrid=Colour.BLUE+Colour.BOLD+"  123 456 789\n"+Colour.ENDC
             for row in range(9):
-                printedGrid+=str(row+1)+" "
+                printedGrid+=Colour.RED+Colour.BOLD+str(row+1)+" "+Colour.ENDC
                 for col in range(9):
                     if grid[row][col]!=0:
                         if self._Game.checkCell(col,row):
@@ -237,7 +253,12 @@ class Terminal(UI):
 
 # Graphical User Interface
 class GUI(UI):
-    #Skill group A - Complex OOP
+###########################################################
+#
+# CATEGORY A SKILL: Complex OOP
+# Undo, Redo, Save and Load base UI functions can all be called through buttons in the GUI
+#
+###########################################################
     def __init__(self, file=None):
         super().__init__(file)
         self.__root = None

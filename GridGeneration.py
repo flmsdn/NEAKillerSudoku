@@ -1,4 +1,3 @@
-import itertools
 import random
 import numpy as np
 import sys
@@ -49,7 +48,13 @@ class Generator():
             cages.append(Cage(cage[1:],grid,cage[0]))
         return cages
     
-    #  Skill group B - use of dictionaries
+###########################################################
+#
+# CATEGORY B SKILL: Use of dictionaries
+# Using a dictionary to link cells with their corresponding cages
+#
+###########################################################
+
     def getCageDict(self,cages):
         cageDict = {}
         for e,cage in enumerate(cages):
@@ -84,7 +89,7 @@ class Generator():
         for i in range(9):
             for j in range(9):
                 if grid[i][j] == 0:
-                    for number in range(1, 10):
+                    for number in self.__nums:
                         if self.__checkValidity(grid, i, j, number):
                             grid[i][j] = number
                             if self.__fillGrid(grid):
@@ -92,8 +97,12 @@ class Generator():
                             grid[i][j] = 0
                     return False
         return True
-    
-    #  Skill group A - Use of recursive functions
+###########################################################
+#
+# CATEGORY A SKILL: Use of recursive functions
+# Uses recursive functions to check if a grid is uniquely solvable in its current state
+#
+###########################################################
     #checks if a grid, in its current state, is uniquely solvable
     def __iterateGrid(self,grid,saveState):
         #iterates over every cell
@@ -101,7 +110,7 @@ class Generator():
             for j in range(9):
                 if grid[i][j] == 0:
                     # checks all possible numbers
-                    for number in range(1, 10):
+                    for number in self.__nums:
                         if self.__checkValidity(grid, i, j, number):
                             grid[i][j] = number
                             if self.__iterateGrid(grid,saveState):
@@ -119,7 +128,7 @@ class Generator():
         for i in range(9):
             for j in range(9):
                 if grid[i][j] == 0:
-                    for number in range(1, 10):
+                    for number in self.__nums:
                         if self.__checkKillerValidity(grid, i, j, number):
                             grid[i][j] = number
                             if self.__iterateKillerGrid(grid,saveState):
@@ -136,9 +145,13 @@ class Generator():
             self.__fillGrid(gridTrial)
             if self.checkComplete(gridTrial):
                 return gridTrial.tolist()
-    
-    #  Skill group A - Complex User Defined Algorithms
-    #  Skill group B - Use of multidimensional NumPy arrays and lists
+###########################################################
+#
+# CATEGORY A SKILL: Complex user defined algorithms
+# Use of complex user defined algorithms to generate grids
+#
+###########################################################
+
     def genGrid(self, difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
         self.__fillGrid(grid) #fill grid in with random values
@@ -160,6 +173,13 @@ class Generator():
                 difficulty-=1
         return grid.tolist()
     
+###########################################################
+#
+# CATEGORY B SKILL: Multidimensional arrays and lists
+# Use of multidimensional NumPy arrays and lists to store the grid
+#
+###########################################################
+
     def genKillerGrid(self,difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
         self.__fillGrid(grid) #fill grid in with random values
@@ -191,7 +211,13 @@ class Generator():
                 difficulty-=1
         return grid.tolist(), allCages
 
-    #  Skill group A - Pattern Matching
+###########################################################
+#
+# CATEGORY A SKILL: Complex Pattern Matching
+# Searches a grid to find matching cage shapes within the numbers
+#
+###########################################################
+
     def __findShape(self,grid,shape):
         usedCoords = []
         #shape coordinates are in the form [y,x]
@@ -260,7 +286,7 @@ class Generator():
             #i 0 is 4, i 3 is 1
             indShapes = shapes[3-i]
             for s in indShapes:
-                coordinates = self.__findShape(tempGrid, [range(1,10),s])
+                coordinates = self.__findShape(tempGrid, [self.__nums,s])
                 if len(coordinates):
                     for cage in coordinates:
                         cReverse = []

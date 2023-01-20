@@ -86,7 +86,6 @@ class Generator():
                 return True
     #fills an empty 9x9 grid
     def __fillGrid(self,grid):
-        random.shuffle(self.__nums)
         for i in range(9):
             for j in range(9):
                 if grid[i][j] == 0:
@@ -155,6 +154,7 @@ class Generator():
 
     def genGrid(self, difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
+        random.shuffle(self.__nums)
         self.__fillGrid(grid) #fill grid in with random values
         #limit difficulty
         if difficulty>7: difficulty=7
@@ -183,6 +183,7 @@ class Generator():
 
     def genKillerGrid(self,difficulty):
         grid = np.array([[0]*9]*9,ndmin=2) #empty grid
+        random.shuffle(self.__nums)
         self.__fillGrid(grid) #fill grid in with random values
         #limit difficulty
         if difficulty>7: difficulty=7

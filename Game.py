@@ -87,6 +87,7 @@ class Game():
         self.__gameType = gameType
         self.__errors = 0
         self.__fixedCells = []
+        self.__pencilMarkings = [[None for _ in range(9)] for _ in range(9)]
         self.__time = 0
         self.__openTime = time()
         if self.__gameType==0:

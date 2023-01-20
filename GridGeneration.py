@@ -86,6 +86,7 @@ class Generator():
                 return True
     #fills an empty 9x9 grid
     def __fillGrid(self,grid):
+        random.shuffle(self.__nums)
         for i in range(9):
             for j in range(9):
                 if grid[i][j] == 0:

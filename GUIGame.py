@@ -48,7 +48,6 @@ class GUIGame():
             self.loadedImages.append(Image.open(imgPath+url))
     
     def updateTheme(self,theme):
-        print("loadedTheme")
         self.__colours = theme
 
     # operations on colours
@@ -258,15 +257,17 @@ class GUIGame():
 
     #draws the current grid onto the canvas
     def updateGrid(self, grid, fixedCells, errorCells=None,errorCount=0,pencilMarkings=None,cages=None,cageDict=None):
-        if errorCount>0:
-            for err in range(len(self.errorCrosses)):
+        for err in range(len(self.errorCrosses)):
+            try:
                 if err<errorCount and self.errorCrosses[err]:
-                    try:
-                        self.errorCrosses[err].config(image = self.__errorCross) #error occurs on this line not next
-                        self.errorCrosses[err].image = self.__errorCross
-                    except Exception as e:
-                        #image isn't loaded yet
-                        print("Image Not Loaded Yet")
+                    self.errorCrosses[err].config(image = self.__errorCross) #error occurs on this line not next
+                    self.errorCrosses[err].image = self.__errorCross
+                else:
+                    self.errorCrosses[err].config(image = self.__emptyCross) #error occurs on this line not next
+                    self.errorCrosses[err].image = self.__emptyCross
+            except Exception as e:
+                #image isn't loaded yet
+                pass
         fontNormal = ('Helvetica','20')
         fontFixed = ('Helvetica','20','bold')
         fontPencil = ('Helvetica','9')

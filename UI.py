@@ -339,7 +339,7 @@ class GUI(UI):
         settingsButton.pack(expand=True,fill=tk.BOTH)
         #difficulty slider
         sliderFrame = tk.Frame(self.__root, bg=bgCol)
-        sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=round(self.__dim[1]*0.32)+buttonHeight,width=buttonWidth,height=buttonHeight*4)
+        sliderFrame.place(x=self.__dim[0]//2-buttonWidth-offsetHoriz,y=offsetVert+round(self.__dim[1]*0.05),width=buttonWidth,height=buttonHeight*4)
         self.__selectedGameMode = tk.StringVar()
         self.__selectedGameMode.set(self.__gameModes[0])
         gameModeSelect = tk.OptionMenu(sliderFrame, self.__selectedGameMode, *self.__gameModes)

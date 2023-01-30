@@ -20,9 +20,12 @@ class Generator():
         shapeCfgFile = open(sys.path[0]+r"\Resources\config\shapes.json","r")
         self.__shapeConfig = json.load(shapeCfgFile)
     
-    def __check(self,test,array): #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
+    #checks if a smaller array is in a larger array
+    #https://codereview.stackexchange.com/questions/193835/checking-a-one-dimensional-numpy-array-in-a-multidimensional-array-without-a-loo
+    def __checkSubarr(self,test,array):
         return any(np.array_equal(x, test) for x in array)
 
+    #checks if a regular Sudoku grid is complete
     def checkComplete(self, grid):
         npBoard = np.array(grid) #get a numpy 2D array of the grid
         gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
@@ -33,15 +36,18 @@ class Generator():
                 return False
         return True
 
+    #converts a cell coordinate to a cell index
     def __coordToInd(self,coord):
         return coord[0]+coord[1]*9 #counts up with x values
 
+    #creates a list of all cage data as a multidimensional list
     def getCageList(self,cages):
         cageList = []
         for c in cages:
             cageList.append([int(c.sum),*[[int(cell[0]),int(cell[1])] for cell in c.cells]])
         return cageList
     
+    #creates a list of all cage data as Cage objects
     def getCages(self,cageList,grid):
         cages = []
         for cage in cageList:
@@ -77,13 +83,17 @@ class Generator():
                 if grid[grid_row * 3 + i][grid_col * 3 + j] == number:
                     return False
         return True
+
+    #checks if a move in a Killer Sudoku Grid is valid
     def __checkKillerValidity(self, grid, row, col, number):
-        if self.__checkValidity(grid,row,col,number): #checks regular validity along with the current cage sum
+        if self.__checkValidity(grid,row,col,number):
+            #checks cage sum
             cInd = self.__cageDict[self.__coordToInd([col,row])]
             cage = self.__cages[cInd]
             vals = [c for c in self.__cellList[cInd] if c >0]
             if sum(self.__cellList[cInd])<=cage.sum and len(set(vals)) == len(vals):
                 return True
+
     #fills an empty 9x9 grid
     def __fillGrid(self,grid):
         for i in range(9):
@@ -97,6 +107,7 @@ class Generator():
                             grid[i][j] = 0
                     return False
         return True
+
 ###########################################################
 #
 # CATEGORY A SKILL: Use of recursive functions
@@ -123,6 +134,7 @@ class Generator():
         self.__count+=1
         return True
     
+    #checks if a Killer Grid is uniquely solvable in its current state
     def __iterateKillerGrid(self,grid,saveState):
         #performs the same as before, but for killer sudoku grids
         for i in range(9):
@@ -139,6 +151,7 @@ class Generator():
         self.__count+=1
         return True
 
+    #solves a regular Sudoku grid
     def solveGrid(self,grid):
         while True:
             gridTrial = np.copy(grid)
@@ -188,9 +201,10 @@ class Generator():
         #limit difficulty
         if difficulty>7: difficulty=7
         elif difficulty<1: difficulty=1
-        emptiedGrid, cages = self.__checkForDefiniteCages(grid) #we get the definite cages, leaving cells that cannot fit in these
+        #we get the definite cages, leaving cells that cannot fit in these
+        emptiedGrid, cages = self.__checkForDefiniteCages(grid)
         #now we need to find a way to create cages around remaining cells
-        #we create cages around remaining cells, avoiding certain shapes to make the puzzle more varied
+        #we create cages around remaining cells
         emptiedGrid,newCages = self.__fillInFinalCages(emptiedGrid)
         allCages = cages+newCages
         self.__cages = self.getCages(allCages,grid)
@@ -241,7 +255,7 @@ class Generator():
                     foundCoord = False
                     checkCoord = [coord[0]+unusedCoords[-1][0],coord[1]+unusedCoords[-1][1]]
                     for i in unusedInd:
-                        if self.__check(np.array(checkCoord), numCoords[i]) and not (checkCoord in usedCoords):
+                        if self.__checkSubarr(np.array(checkCoord), numCoords[i]) and not (checkCoord in usedCoords):
                             foundCoord=True
                             curShape.append(checkCoord)
                             unusedInd.remove(i)
@@ -255,6 +269,7 @@ class Generator():
                     usedCoords = usedCoords + curShape
         return shapes
     
+    #finds all cages where the numbers are unique for the given cage sum
     def __checkForDefiniteCages(self,grid):
         #copy the filled grid
         tempG = np.copy(grid)
@@ -281,6 +296,7 @@ class Generator():
                             cages.append( [sum(ns)] + cReverse )
         return tempG, cages #return the grid with uncaged cells and the cages
 
+    #places cages around all remaining uncaged cells
     def __fillInFinalCages(self,tempGrid):
         shapes = self.__shapeConfig["reducedShapes"] #ind 0 is size 2, 1 is size 3... 3 is size 5
         cages = []
@@ -300,6 +316,7 @@ class Generator():
                         cages.append( [cSum] + cReverse )
         return tempGrid, cages
     
+    #checks if a Killer Sudoku grid is complete
     def __checkKillerComplete(self, grid):
         npBoard = np.array(grid) #get a numpy 2D array of the grid
         gridRows = [npBoard[i,:] for i in range(9)] #get all of the grid rows
@@ -315,6 +332,7 @@ class Generator():
                 return False
         return True
 
+    #solves a Killer Sudoku grid
     def solveKillerGrid(self,grid,allCages):
         self.__cages = allCages
         self.__cageDict = self.getCageDict(self.__cages)

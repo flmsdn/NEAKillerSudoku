@@ -55,15 +55,18 @@ class GUIGame():
     def rgbToHex(self,rgb):
         return '#%02x%02x%02x' % rgb
     
+    #clamps values to be within a range
     def __clamp(self,val):
         return sorted([0,val,255])[1]
 
+    #mathematical operations on colours
     def __mulC(self,a,b):
         try:
             return tuple([ self.__clamp(round(a[x]*b[x])) for x in range(len(a))])
         except:
             return tuple([ self.__clamp(round(a[x]*b)) for x in range(len(a))])
     
+
     def __addC(self,a,b):
         return tuple([self.__clamp(a[x]+b[x]) for x in range(len(a))])
     
@@ -73,9 +76,11 @@ class GUIGame():
     def gameComplete(self):
         return self.__gameComplete or self.__gameOver
     
+    #update the game to be lost
     def gameOver(self):
         self.__gameOver = True
     
+    #the game has been correctly completed - start the animation
     def endGame(self):
         self.__gameComplete = True
         self.__animationStart = time()
@@ -84,6 +89,7 @@ class GUIGame():
         self.__selectedCell = None
         self.__gameComplete = False
 
+    #toggle the writing mode between Pen and Pencil
     def updateWriteMode(self):
         self.__writeMode = "Pen" if self.__writeMode ==  "Pencil" else "Pencil"
         self.writeModeButton.config(text=self.__writeMode)
@@ -107,6 +113,7 @@ class GUIGame():
         self.loadSizedWindow()
         self.gameWindow.resizable(True,True)
     
+    #load the GUI, scaled to the window dimensions
     def loadSizedWindow(self):
         preservedWidgets = [tk.Canvas]
         for widget in self.gameWindow.winfo_children():
@@ -181,6 +188,7 @@ class GUIGame():
             self.errorCrosses[cross].image = self.__emptyCross
             self.errorCrosses[cross].pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
 
+    #resize the window
     def resize(self,event):
         if [event.width,event.height]!=self.__dim:
             if type(event.widget)==tk.Toplevel:
@@ -193,6 +201,7 @@ class GUIGame():
     def startGame(self):
         self.gameWindow.mainloop()
     
+    #fully exit the game
     def closeGame(self):
         self.gameWindow.destroy()
         self.gameWindow = None
@@ -213,6 +222,7 @@ class GUIGame():
         if not self.__selectedCell == gridCell:
             self.__selectedCell = gridCell
 
+    #prompt the user to enter a file name to save to
     def savePrompt(self):
         while True:
             st = sd.askstring("Prompt","Enter a name to save as (Only using alphanumeric characters): ")
@@ -220,12 +230,14 @@ class GUIGame():
             if m: break
         return st
     
+    #prompt the user to load a file
     def loadPrompt(self):
         st = fd.askopenfilename()
         matchObj = (re.match(r".*\/(.*\.json)$",st))
         if matchObj is None: return ""
         return matchObj.groups()[0]
 
+    #create the cage outlines to draw onto a Killer Grid
     def traverseCage(self,cageCells,offset):
         points = []
         x,y = cageCells[0]

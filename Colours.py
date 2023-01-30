@@ -1,5 +1,5 @@
 class Colour:
-    #contains special unicode formatting characters
+    #contains special unicode formatting characters for the Terminal
     HEADER = '\033[95m'
     BLUE = '\033[94m'
     CYAN = '\033[96m'

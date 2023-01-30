@@ -1,13 +1,13 @@
 import os, sys
 import tkinter as tk
 import tkinter.font, tkinter.messagebox
+import winsound
+import re
 from Database import DBManager
 from Settings import SettingsManager
 from Game import Game
 from Colours import Colour
 from GUIGame import GUIGame
-import winsound
-import re
 
 #Events are going to be used with Exception Handling
 class GameFinish(Exception):
@@ -122,18 +122,21 @@ class Terminal(UI):
     def __init__(self, file=None):
         super().__init__(file)
 
+    #shows the start screen, starts the game when given user input
     def run(self):
         print(Colour.GREEN+Colour.BOLD+"Sudoku"+Colour.ENDC+"\n")
         print(open(sys.path[0]+"\\Resources\\Instructions.txt").read(),"\n\nPress Enter to Play")
         input()
         super().run()
 
+    #saves a file given a filename by the user
     def _save(self, fileName=None):
         if fileName is None:
             fileName = input("Enter a name to save the file as (leave blank to not save):")
         super()._save(fileName)
         print("Saved\n")
 
+    #loads a file given a file name by the user
     def _load(self,fileName=None):
         if fileName is None:
             games = os.listdir(sys.path[0]+"\\LocalGames")
@@ -141,6 +144,7 @@ class Terminal(UI):
             fileName = input("Choose a file to load: ")
         super()._load(fileName)
 
+    #tells the user that the game is finished if the game has been completed
     def __gridComplete(self):
         if self._Game.checkComplete():
             print("Well done! Game complete")
@@ -154,6 +158,7 @@ class Terminal(UI):
         if playAgain=="n":
             self._gameOver = True
 
+    #opens a game and then plays it
     def play(self):
         i = input("Would you like to load a game or play a new game? (1/2)")
         if i=="1":
@@ -168,9 +173,11 @@ class Terminal(UI):
                 diff = 2
             self._Game.newGame(diff,0)
 
+        #input validation
         def validInp(text, val):
             value = input(text)
-            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save, "f": Solve, "l": Load } #use a dictionary to avoid long if statements
+            #use a dictionary to avoid long if statements
+            gameEvents = {"t": GameFinish, "u": Undo, "r": Redo, "s": Save, "f": Solve, "l": Load }
             if value.lower() in gameEvents:
                 raise gameEvents[value.lower()]
             minValue = -1 if val else 0
@@ -186,7 +193,9 @@ class Terminal(UI):
                 break
             while True:
                 try:
-                    x,y,val = validInp("Col to input ("+Colour.BLUE+Colour.BOLD+"x" +Colour.ENDC+ " coordinate): ",False), validInp("Row to input ("+Colour.RED+Colour.BOLD+"y" +Colour.ENDC+" coordinate): ",False), validInp("Value: ",True)
+                    x = validInp("Col to input ("+Colour.BLUE+Colour.BOLD+"x" +Colour.ENDC+ " coordinate): ",False)
+                    y = validInp("Row to input ("+Colour.RED+Colour.BOLD+"y" +Colour.ENDC+" coordinate): ",False)
+                    val = validInp("Value: ",True)
                     if self._Game.checkCell(x-1,y-1):
                         break
                     else:
@@ -230,6 +239,7 @@ class Terminal(UI):
             print("\n")
             self._playMove(x,y,val)
 
+    #displays the grid
     def display(self):
         if self._Game.getType() == 0:
             grid = self._Game.getGrid()
@@ -248,8 +258,6 @@ class Terminal(UI):
                 if row in (2,5): printedGrid+="\n  "+Colour.BOLD+"-"*11+Colour.ENDC
                 printedGrid+="\n"
             print(printedGrid)
-        else:
-            pass
 
 # Graphical User Interface
 class GUI(UI):
@@ -284,10 +292,12 @@ class GUI(UI):
         self.__gameModes = ["Sudoku", "Killer Sudoku"]
         self.__muted = self.__settingsManager.getMuted()
 
+    #plays a sound given an ID
     def playSound(self,id):
         if self.__muted: return
         winsound.PlaySound(self.__audioPath+self.__audioPreset+self.__soundsDict[id], winsound.SND_ASYNC | winsound.SND_ALIAS)
 
+    #creates the GUI window and start menu
     def __startMenu(self):
         self.__root = tk.Tk()
         self.__font = tkinter.font.nametofont("TkDefaultFont")
@@ -351,10 +361,12 @@ class GUI(UI):
         self.__difficultySlider = tk.Scale(sliderFrame, from_=1, to=7, orient=tk.HORIZONTAL,fg=txtCol, bg=bgCol,relief="flat",highlightthickness=0)
         self.__difficultySlider.pack(expand=True,fill=tk.X)
 
+    #plays a move and finds any potential errors
     def _playMove(self, x, y, val):
         super()._playMove(x, y, val)
         self.__errorCells = self._Game.getErrorCells()
 
+    #opens the settings window
     def __openSettingsWindow(self):
         if self.__GUIGame.gameWindow!=None: #make sure game is not open at same time as settings window
             if not self.__GUIGame.gameWindow.winfo_exists():
@@ -454,11 +466,13 @@ class GUI(UI):
             self.__logInMessage = tk.Label(self.__settingsWindow,bg=bgCol,fg=txtCol)
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
+    #mutes or unmutes the game
     def __toggleMute(self):
         self.__settingsManager.toggleMute()
         self.__muted = self.__settingsManager.getMuted()
         self.__muteButton.config(text=("Mute","Unmute")[self.__muted])
 
+    #updates the current Colour Theme
     def __updateTheme(self):
         ind = self.__themeStrings.index(self.__themeOption.get())
         self.__settingsManager.setTheme(ind)
@@ -466,18 +480,22 @@ class GUI(UI):
         self.__closeSettings()
         self.__openSettingsWindow()
     
+    #updates the current Audio Preset
     def __updateAudio(self):
         self.__audioPreset = self.__audioOption.get().lower()
         self.__settingsManager.setAudio(self.__audioPreset)
 
+    #updates the GUI to show an update password button
     def __updateLoginInputs(self):
         self.__logInInputs[3].pack_forget()
         self.__logInInputs[2].config(text="Update Password", command=self.__updatePW)
     
+    #allows the currently logged in user to update their password
     def __updatePW(self):
         if self.__dataBaseManager.updatePassword(*[a.get() for a in self.__logInInputs[:2]]):
             for a in self.__logInInputs[:2]: a.delete(0,tk.END)
 
+    #attempts to log in to an account
     def __attemptLogin(self):
         successfulLogin = self.__dataBaseManager.attemptLogin(*[a.get() for a in self.__logInInputs[:2]])
         if successfulLogin:
@@ -490,6 +508,7 @@ class GUI(UI):
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.03),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
     
+    #attempts to create a new account
     def __attemptSignUp(self):
         successfulSignUp = self.__dataBaseManager.attemptSignUp(*[a.get() for a in self.__logInInputs[:2]])
         if successfulSignUp:
@@ -501,6 +520,7 @@ class GUI(UI):
             self.__logInMessage.config(text="Logged in as " + self.__dataBaseManager.getUsername())
             self.__logInMessage.place(x=round(dims[0]*0.2),y=round(dims[1]*0.1),width=round(dims[0]*0.2),height=round(dims[1]*0.1))
 
+    #attempts to sign out of the current account
     def __attemptSignOut(self):
         if self.__dataBaseManager.checkLoggedIn():
             self.__settingsManager.updateAccount(None,None) #signs out in the settings
@@ -512,10 +532,12 @@ class GUI(UI):
         else:
             print("You are already signed out")
 
+    #closes the settings window
     def __closeSettings(self):
         self.__settingsWindow.destroy()
         self.__settingsWindow = None
 
+    #opens up a window for the game to be played in
     def __gameScreen(self):
         if self.__settingsWindow!=None:
             if not self.__settingsWindow.winfo_exists():
@@ -526,16 +548,16 @@ class GUI(UI):
         self.eventSetup()
         self.__GUIGame.startGame()
 
+    #updates the Pen/Pencil button
     def toggleWriteButton(self):
         self.__GUIGame.updateWriteMode()
         self._Game.toggleWrite()
 
-    def closeMenu(self):
-        pass
-
+    #closes the current game
     def closeGame(self):
         self.__GUIGame.closeGame()
     
+    #methods handling events
     def undo(self,event):
         self.undoButton()
 
@@ -555,16 +577,19 @@ class GUI(UI):
         self.__GUIGame.updateWriteMode()
         self._Game.toggleWrite()
 
+    #creates a new game of the chosen difficulty
     def playRandom(self):
         self._Game.newGame(self.__difficultySlider.get(),gameType = self.__gameModes.index(self.__selectedGameMode.get()))
         self.__errorCells = self._Game.getErrorCells()
         self.__errors = 0
         self.__gameScreen()
     
+    #plays a game that the user has loaded
     def playLoad(self):
         self.loadButton(play=True)
         self.__gameScreen()
 
+    #handles button inputs
     def undoButton(self):
         if self.__GUIGame.gameComplete(): return
         if super()._undo():
@@ -604,20 +629,23 @@ class GUI(UI):
         self.__GUIGame.cellClick(event)
         self.display()
 
+    #binds all mouse and keyboard events
     def eventSetup(self):
         self.__GUIGame.gameGrid.bind("<Button 1>",self.clickCanvas)
         for number in range(1,10):
             self.__GUIGame.gameWindow.bind(str(number),self.__numInput)
         self.__GUIGame.gameWindow.bind("<Key-BackSpace>",self.__numInput)
-        gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve, "p": self.toggleWrite } #use a dictionary to avoid long if statements
+        gameEvents = {"t": self.closeGame, "u": self.undo, "r": self.redo, "s": self.save, "f": self.solve, "p": self.toggleWrite }
         for x in gameEvents:
             self.__GUIGame.gameWindow.bind(x,gameEvents[x])
         self.__GUIGame.gameWindow.bind("<Configure>",self.resize)
 
+    #resizes the game window
     def resize(self,event):
         self.__GUIGame.resize(event)
         self.display()
 
+    #handles numerical input
     def __numInput(self,event):
         if self.__GUIGame.gameComplete(): return
         if event.keycode==8:
@@ -646,16 +674,20 @@ class GUI(UI):
                         self.playSound(1)
                 self.display()
 
+    #runs the GUI as a whole
     def run(self):
         self.__startMenu()
         self.__root.mainloop()
 
+    #updates the GUI grid
     def display(self):
+        gridArr, fCells, errCells, errs, pMarkings = self._Game.getGrid(),self._Game.fixedCells(),self.__errorCells,self.__errors,self._Game.getPencilMarkings()
         if self._Game.getType()==0:
-            self.__GUIGame.updateGrid(self._Game.getGrid(),self._Game.fixedCells(),self.__errorCells,self.__errors,self._Game.getPencilMarkings())
+            self.__GUIGame.updateGrid(gridArr, fCells, errCells, errs, pMarkings)
         elif self._Game.getType()==1:
-            self.__GUIGame.updateGrid(self._Game.getGrid(),self._Game.fixedCells(),self.__errorCells,self.__errors,self._Game.getPencilMarkings(),self._Game.getCages(),self._Game.getCagesDict())
+            self.__GUIGame.updateGrid(gridArr, fCells, errCells, errs, pMarkings, self._Game.getCages(), self._Game.getCagesDict())
     
+    #closes the entire game
     def gameOver(self):
         self.gameOver = True
         self.__root.destroy()
